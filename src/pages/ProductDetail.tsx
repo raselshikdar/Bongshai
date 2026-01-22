@@ -170,7 +170,8 @@ const ProductDetail = () => {
       toast.success("Review submitted!");
       setCanReview(false);
       setComment("");
-      // Refresh reviews
+      setRating(5);
+      // Refresh reviews using left join (consistent with initial fetch)
       const { data } = await supabase
         .from("reviews")
         .select(`
@@ -178,7 +179,8 @@ const ProductDetail = () => {
           rating,
           comment,
           created_at,
-          profiles!inner(name)
+          user_id,
+          profiles(name)
         `)
         .eq("product_id", id)
         .order("created_at", { ascending: false });
@@ -189,7 +191,7 @@ const ProductDetail = () => {
           rating: r.rating,
           comment: r.comment,
           created_at: r.created_at,
-          user_name: r.profiles?.name || "Anonymous",
+          user_name: r.profiles?.name || "Customer",
         })));
       }
     }
@@ -228,7 +230,12 @@ const ProductDetail = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
           <button onClick={() => navigate("/")} className="hover:text-primary">Home</button>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">{product.category}</span>
+          <button 
+            onClick={() => navigate(`/category/${product.category.toLowerCase().replace(/\s*&\s*/g, '-').replace(/\s+/g, '-')}`)} 
+            className="hover:text-primary text-foreground"
+          >
+            {product.category}
+          </button>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2 overflow-hidden">
