@@ -18,7 +18,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const categories = [
-  "Electronics", "Fashion", "Home & Living", "Beauty", "Sports", "Groceries", "Toys", "Automotive"
+  { name: "Electronics", slug: "electronics" },
+  { name: "Fashion", slug: "fashion" },
+  { name: "Home & Living", slug: "home-living" },
+  { name: "Beauty", slug: "beauty" },
+  { name: "Sports", slug: "sports" },
+  { name: "Groceries", slug: "groceries" },
+  { name: "Toys", slug: "toys" },
+  { name: "Automotive", slug: "automotive" },
 ];
 
 export const Header = () => {
@@ -68,8 +75,13 @@ export const Header = () => {
                 <div className="border-t pt-4">
                   <h2 className="text-lg font-bold mb-2">Categories</h2>
                   {categories.map((cat) => (
-                    <Button key={cat} variant="ghost" className="w-full justify-start">
-                      {cat}
+                    <Button 
+                      key={cat.slug} 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => navigate(`/category/${cat.slug}`)}
+                    >
+                      {cat.name}
                     </Button>
                   ))}
                 </div>
@@ -252,13 +264,13 @@ export const Header = () => {
         <div className="container">
           <div className="flex items-center gap-6 h-10 overflow-x-auto scrollbar-hide">
             {categories.map((cat) => (
-              <a
-                key={cat}
-                href="#"
+              <button
+                key={cat.slug}
+                onClick={() => navigate(`/category/${cat.slug}`)}
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
               >
-                {cat}
-              </a>
+                {cat.name}
+              </button>
             ))}
           </div>
         </div>
