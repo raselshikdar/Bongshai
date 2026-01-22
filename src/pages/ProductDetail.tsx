@@ -106,14 +106,7 @@ const ProductDetail = () => {
     const checkCanReview = async () => {
       if (!id || !user) return;
 
-      // Check if user has purchased this product and hasn't reviewed yet
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("id, order_items!inner(product_id)")
-        .eq("user_id", user.id)
-        .eq("status", "delivered")
-        .eq("order_items.product_id", id);
-
+      // Allow any logged-in user to review (relaxed from purchaser-only)
       const { data: existingReview } = await supabase
         .from("reviews")
         .select("id")
@@ -121,7 +114,8 @@ const ProductDetail = () => {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      setCanReview(!!orders?.length && !existingReview);
+      // User can review if they haven't already reviewed
+      setCanReview(!existingReview);
     };
 
     fetchProduct();
@@ -363,7 +357,27 @@ const ProductDetail = () => {
                 >
                   <Heart className={cn("h-5 w-5", isWishlisted && "fill-current")} />
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={async () => {
+                    const url = window.location.href;
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: product.name,
+                          text: `Check out ${product.name} on HaatBazar!`,
+                          url,
+                        });
+                      } catch (err) {
+                        // User cancelled or error
+                      }
+                    } else {
+                      await navigator.clipboard.writeText(url);
+                      toast.success("Link copied to clipboard!");
+                    }
+                  }}
+                >
                   <Share2 className="h-5 w-5" />
                 </Button>
               </div>
@@ -447,11 +461,11 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Purchased but already reviewed or not purchased */}
+            {/* Logged in but already reviewed message */}
             {user && !canReview && (
               <div className="p-4 border rounded-lg bg-muted/30 text-center">
                 <p className="text-muted-foreground">
-                  Only customers who have purchased and received this product can write a review.
+                  You have already reviewed this product or you're not logged in correctly.
                 </p>
               </div>
             )}

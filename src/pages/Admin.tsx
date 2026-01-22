@@ -162,14 +162,16 @@ const Admin = () => {
 
     if (productsData) setProducts(productsData);
 
-    // Fetch orders with user profiles
-    const { data: ordersData } = await supabase
+    // Fetch orders - using left join to ensure all orders are fetched even if profile is missing
+    const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
       .select(`
         *,
         profiles(name, phone)
       `)
       .order("created_at", { ascending: false });
+
+    console.log("Orders fetch result:", { ordersData, ordersError });
 
     if (ordersData) {
       setOrders(ordersData.map((order: any) => ({
@@ -945,22 +947,48 @@ const Admin = () => {
                             {new Date(order.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Select
-                                value={order.status}
-                                onValueChange={(v) => handleUpdateOrderStatus(order.id, v as "pending" | "processing" | "shipped" | "delivered" | "cancelled")}
-                              >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="processing">Processing</SelectItem>
-                                  <SelectItem value="shipped">Shipped</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {/* Quick action buttons based on current status */}
+                              {order.status === "pending" && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                  onClick={() => handleUpdateOrderStatus(order.id, "processing")}
+                                >
+                                  Approve
+                                </Button>
+                              )}
+                              {order.status === "processing" && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                  onClick={() => handleUpdateOrderStatus(order.id, "shipped")}
+                                >
+                                  Ship
+                                </Button>
+                              )}
+                              {order.status === "shipped" && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                  onClick={() => handleUpdateOrderStatus(order.id, "delivered")}
+                                >
+                                  Deliver
+                                </Button>
+                              )}
+                              {(order.status === "pending" || order.status === "processing") && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="text-destructive border-destructive hover:bg-destructive/10"
+                                  onClick={() => handleUpdateOrderStatus(order.id, "cancelled")}
+                                >
+                                  Cancel
+                                </Button>
+                              )}
                               <Button variant="ghost" size="icon" onClick={() => handleEditOrder(order)}>
                                 <FileText className="h-4 w-4" />
                               </Button>
