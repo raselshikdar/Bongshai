@@ -1,0 +1,465 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ArrowLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  original_price: number | null;
+  stock: number;
+  category: string;
+  images_url: string[];
+  rating: number;
+  review_count: number;
+}
+
+interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  user_name: string;
+}
+
+const ProductDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { user } = useAuth();
+  
+  const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  
+  // Review form
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [canReview, setCanReview] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error || !data) {
+        navigate("/");
+        return;
+      }
+
+      setProduct(data);
+      setIsLoading(false);
+    };
+
+    const fetchReviews = async () => {
+      if (!id) return;
+
+      const { data } = await supabase
+        .from("reviews")
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          profiles!inner(name)
+        `)
+        .eq("product_id", id)
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        setReviews(data.map((r: any) => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          created_at: r.created_at,
+          user_name: r.profiles?.name || "Anonymous",
+        })));
+      }
+    };
+
+    const checkCanReview = async () => {
+      if (!id || !user) return;
+
+      // Check if user has purchased this product and hasn't reviewed yet
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_items!inner(product_id)")
+        .eq("user_id", user.id)
+        .eq("status", "delivered")
+        .eq("order_items.product_id", id);
+
+      const { data: existingReview } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("product_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      setCanReview(!!orders?.length && !existingReview);
+    };
+
+    fetchProduct();
+    fetchReviews();
+    checkCanReview();
+  }, [id, user, navigate]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    for (let i = 0; i < quantity; i++) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.original_price || undefined,
+        image: product.images_url[0] || "/placeholder.svg",
+      });
+    }
+    toast.success(`Added ${quantity} item(s) to cart!`);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user || !id) return;
+    
+    setIsSubmittingReview(true);
+    
+    const { error } = await supabase
+      .from("reviews")
+      .insert({
+        product_id: id,
+        user_id: user.id,
+        rating,
+        comment: comment || null,
+      });
+
+    if (error) {
+      toast.error("Failed to submit review");
+    } else {
+      toast.success("Review submitted!");
+      setCanReview(false);
+      setComment("");
+      // Refresh reviews
+      const { data } = await supabase
+        .from("reviews")
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          profiles!inner(name)
+        `)
+        .eq("product_id", id)
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        setReviews(data.map((r: any) => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          created_at: r.created_at,
+          user_name: r.profiles?.name || "Anonymous",
+        })));
+      }
+    }
+    
+    setIsSubmittingReview(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-12">
+          <div className="animate-pulse space-y-4">
+            <div className="h-96 bg-muted rounded-lg" />
+            <div className="h-8 w-1/2 bg-muted rounded" />
+            <div className="h-4 w-1/4 bg-muted rounded" />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!product) return null;
+
+  const discount = product.original_price 
+    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+    : 0;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container py-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <button onClick={() => navigate("/")} className="hover:text-primary">Home</button>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground">{product.category}</span>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Images */}
+          <div className="space-y-4">
+            <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted">
+              <img
+                src={product.images_url[selectedImage] || "/placeholder.svg"}
+                alt={product.name}
+                className="w-full h-full object-contain"
+              />
+              {discount > 0 && (
+                <Badge className="absolute top-4 left-4 gradient-flash text-white">
+                  -{discount}%
+                </Badge>
+              )}
+            </div>
+            {product.images_url.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {product.images_url.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg border-2 overflow-hidden ${
+                      selectedImage === idx ? "border-primary" : "border-muted"
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold">{product.name}</h1>
+              
+              <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.round(product.rating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-sm ml-1">({product.review_count} reviews)</span>
+                </div>
+                {product.stock > 0 ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    In Stock
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">Out of Stock</Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-bold text-primary">৳{product.price.toLocaleString()}</span>
+                {product.original_price && (
+                  <span className="text-xl text-muted-foreground line-through">
+                    ৳{product.original_price.toLocaleString()}
+                  </span>
+                )}
+              </div>
+              {discount > 0 && (
+                <p className="text-sm text-green-600 font-medium">
+                  You save ৳{(product.original_price! - product.price).toLocaleString()} ({discount}%)
+                </p>
+              )}
+            </div>
+
+            <Separator />
+
+            {product.description && (
+              <div>
+                <h3 className="font-medium mb-2">Description</h3>
+                <p className="text-muted-foreground">{product.description}</p>
+              </div>
+            )}
+
+            {/* Quantity & Add to Cart */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="font-medium">Quantity:</span>
+                <div className="flex items-center border rounded-lg">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </Button>
+                  <span className="w-12 text-center">{quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    disabled={quantity >= product.stock}
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleAddToCart}
+                  className="flex-1 gradient-primary"
+                  size="lg"
+                  disabled={product.stock === 0}
+                >
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Add to Cart
+                </Button>
+                <Button variant="outline" size="lg">
+                  <Heart className="h-5 w-5" />
+                </Button>
+                <Button variant="outline" size="lg">
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Trust badges */}
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Truck className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">Free Delivery</p>
+                  <p className="text-xs text-muted-foreground">On orders over ৳500</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Shield className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">Secure Payment</p>
+                  <p className="text-xs text-muted-foreground">100% protected</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <Card className="mt-12">
+          <CardHeader>
+            <CardTitle>Customer Reviews ({reviews.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Write Review */}
+            {canReview && (
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <h4 className="font-medium mb-4">Write a Review</h4>
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-sm mb-2 block">Rating</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            className={`h-6 w-6 transition-colors ${
+                              star <= rating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground hover:text-yellow-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Share your experience with this product..."
+                    rows={3}
+                  />
+                  <Button
+                    onClick={handleSubmitReview}
+                    disabled={isSubmittingReview}
+                    className="gradient-primary"
+                  >
+                    {isSubmittingReview ? "Submitting..." : "Submit Review"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Reviews List */}
+            {reviews.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No reviews yet. Be the first to review this product!
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{review.user_name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < review.rating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {review.comment && (
+                      <p className="text-muted-foreground">{review.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+
+      <Footer />
+      <WhatsAppButton />
+    </div>
+  );
+};
+
+export default ProductDetail;
