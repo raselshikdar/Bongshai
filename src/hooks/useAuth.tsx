@@ -56,7 +56,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkAndAssignAdminRole = async (userId: string, email: string | undefined) => {
-    // First check if already admin
+    // HARDCODED ADMIN CHECK: If email matches admin email, set admin immediately
+    if (email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      setIsAdmin(true);
+      console.log("✓ Admin user recognized:", email);
+      return;
+    }
+
+    // For other users, check the user_roles table
     const { data: existingRole } = await supabase
       .from("user_roles")
       .select("role")
@@ -66,17 +73,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (existingRole) {
       setIsAdmin(true);
-      return;
-    }
-
-    // If the user email matches the admin email, assign admin role
-    if (email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      // Insert admin role (using service role via RPC or direct insert if allowed)
-      // Since user_roles table doesn't allow INSERT by users, we'll just set isAdmin to true
-      // The actual role assignment should be done via migration or manually
-      // But for UX, we'll recognize this email as admin
-      setIsAdmin(true);
-      console.log("Admin user recognized:", email);
     } else {
       setIsAdmin(false);
     }

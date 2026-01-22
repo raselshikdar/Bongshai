@@ -233,15 +233,15 @@ const ProductDetail = () => {
           <span className="text-foreground">{product.category}</span>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2 overflow-hidden">
           {/* Images */}
-          <div className="space-y-4 overflow-hidden">
-            <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted" style={{ maxWidth: '100vw' }}>
+          <div className="space-y-4 overflow-hidden max-w-full">
+            <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted w-full">
               <img
                 src={product.images_url[selectedImage] || "/placeholder.svg"}
                 alt={product.name}
-                className="w-full h-full object-contain"
-                style={{ maxWidth: '100%', objectFit: 'contain' }}
+                className="w-full h-full object-contain max-w-full"
+                style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
               />
               {discount > 0 && (
                 <Badge className="absolute top-4 left-4 gradient-flash text-white">

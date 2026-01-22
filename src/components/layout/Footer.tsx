@@ -1,8 +1,17 @@
 import { MapPin, Phone, Mail, Facebook, Instagram, Youtube } from "lucide-react";
 
 export const Footer = () => {
+  // Force dark theme regardless of light/dark mode
+  const darkFooterStyles: React.CSSProperties = {
+    backgroundColor: '#0f172a',
+    color: 'white',
+  };
+
   return (
-    <footer className="mt-12" style={{ backgroundColor: '#0f172a', color: 'white' }}>
+    <footer 
+      className="mt-12 !bg-[#0f172a] !text-white" 
+      style={darkFooterStyles}
+    >
       <div className="container py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* About */}
