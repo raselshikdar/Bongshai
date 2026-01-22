@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+// Admin email - auto-assigned admin role
+const ADMIN_EMAIL = "raselshikdar428@gmail.com";
+
 interface Profile {
   id: string;
   name: string | null;
@@ -52,15 +55,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase
+  const checkAndAssignAdminRole = async (userId: string, email: string | undefined) => {
+    // First check if already admin
+    const { data: existingRole } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
 
-    setIsAdmin(!!data);
+    if (existingRole) {
+      setIsAdmin(true);
+      return;
+    }
+
+    // If the user email matches the admin email, assign admin role
+    if (email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      // Insert admin role (using service role via RPC or direct insert if allowed)
+      // Since user_roles table doesn't allow INSERT by users, we'll just set isAdmin to true
+      // The actual role assignment should be done via migration or manually
+      // But for UX, we'll recognize this email as admin
+      setIsAdmin(true);
+      console.log("Admin user recognized:", email);
+    } else {
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
@@ -74,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Defer Supabase calls with setTimeout
           setTimeout(() => {
             fetchProfile(session.user.id);
-            checkAdminRole(session.user.id);
+            checkAndAssignAdminRole(session.user.id, session.user.email);
           }, 0);
         } else {
           setProfile(null);
@@ -90,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (session?.user) {
         fetchProfile(session.user.id);
-        checkAdminRole(session.user.id);
+        checkAndAssignAdminRole(session.user.id, session.user.email);
       }
       setIsLoading(false);
     });

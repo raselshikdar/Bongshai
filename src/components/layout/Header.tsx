@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, Heart, MapPin, ChevronDown, LogOut, Settings, Package, Shield } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, Heart, MapPin, ChevronDown, LogOut, Package, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const categories = [
   "Electronics", "Fashion", "Home & Living", "Beauty", "Sports", "Groceries", "Toys", "Automotive"
@@ -51,28 +52,56 @@ export const Header = () => {
 
       {/* Main header */}
       <div className="border-b bg-card shadow-sm">
-        <div className="container flex h-16 items-center gap-4">
+        <div className="container flex h-16 items-center gap-2 md:gap-4">
           {/* Mobile menu */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72">
+            <SheetContent side="left" className="w-72 bg-card">
               <div className="flex flex-col gap-4 pt-8">
-                <h2 className="text-lg font-bold">Categories</h2>
-                {categories.map((cat) => (
-                  <Button key={cat} variant="ghost" className="justify-start">
-                    {cat}
-                  </Button>
-                ))}
+                {/* Mobile Theme Toggle */}
+                <ThemeToggle variant="full" />
+                
+                <div className="border-t pt-4">
+                  <h2 className="text-lg font-bold mb-2">Categories</h2>
+                  {categories.map((cat) => (
+                    <Button key={cat} variant="ghost" className="w-full justify-start">
+                      {cat}
+                    </Button>
+                  ))}
+                </div>
+                
+                {user && (
+                  <div className="border-t pt-4">
+                    <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/profile")}>
+                      <User className="h-4 w-4 mr-2" />
+                      My Profile
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/profile")}>
+                      <Package className="h-4 w-4 mr-2" />
+                      My Orders
+                    </Button>
+                    {isAdmin && (
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/admin")}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </Button>
+                    )}
+                    <Button variant="ghost" className="w-full justify-start text-destructive" onClick={handleSignOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
               <span className="text-xl font-bold text-primary-foreground">H</span>
             </div>
@@ -81,25 +110,30 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Search bar */}
-          <div className="flex flex-1 items-center gap-2 max-w-2xl mx-4">
+          {/* Search bar - Responsive */}
+          <div className="flex-1 min-w-0 max-w-2xl hidden md:flex items-center gap-2 mx-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search for products, brands and more..."
+                placeholder="Search for products..."
                 className="pl-10 h-10 bg-muted border-0 focus-visible:ring-primary"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button className="h-10 gradient-primary hover:opacity-90 transition-opacity">
-              Search
+            <Button className="h-10 px-4 gradient-primary hover:opacity-90 transition-opacity shrink-0">
+              <Search className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1">
+          {/* Actions - Always visible on right */}
+          <div className="flex items-center gap-1 shrink-0 ml-auto">
+            {/* Desktop Theme Toggle */}
+            <div className="hidden md:flex">
+              <ThemeToggle />
+            </div>
+            
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Heart className="h-5 w-5" />
             </Button>
@@ -123,17 +157,17 @@ export const Header = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="hidden md:flex gap-2">
-                    <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center">
+                  <Button variant="ghost" className="hidden md:flex gap-2 px-2">
+                    <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center shrink-0">
                       <span className="text-sm font-bold text-primary-foreground">
                         {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="max-w-24 truncate">{profile?.name || "Account"}</span>
-                    <ChevronDown className="h-4 w-4" />
+                    <span className="max-w-20 truncate hidden lg:inline">{profile?.name || "Account"}</span>
+                    <ChevronDown className="h-4 w-4 hidden lg:inline" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-card">
                   <DropdownMenuLabel>
                     <div className="flex flex-col">
                       <span className="font-medium">{profile?.name || "User"}</span>
@@ -172,7 +206,7 @@ export const Header = () => {
                 onClick={() => navigate("/auth")}
               >
                 <User className="h-5 w-5" />
-                <span>Login</span>
+                <span className="hidden lg:inline">Login</span>
               </Button>
             )}
 
@@ -184,6 +218,25 @@ export const Header = () => {
               onClick={() => navigate(user ? "/profile" : "/auth")}
             >
               <User className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Mobile Search - Own row */}
+        <div className="md:hidden px-4 pb-3">
+          <div className="relative flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search for products..."
+                className="pl-10 h-10 bg-muted border-0 focus-visible:ring-primary"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button className="h-10 px-3 gradient-primary hover:opacity-90 transition-opacity shrink-0">
+              <Search className="h-4 w-4" />
             </Button>
           </div>
         </div>
