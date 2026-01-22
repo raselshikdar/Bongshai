@@ -181,13 +181,25 @@ export const Header = () => {
                       </span>
                     </div>
                     <span className="max-w-20 truncate hidden lg:inline">{profile?.name || "Account"}</span>
+                    {isAdmin && (
+                      <Badge variant="destructive" className="text-xs px-1.5 py-0.5 hidden lg:flex">
+                        ADMIN
+                      </Badge>
+                    )}
                     <ChevronDown className="h-4 w-4 hidden lg:inline" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-card">
                   <DropdownMenuLabel>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{profile?.name || "User"}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{profile?.name || "User"}</span>
+                        {isAdmin && (
+                          <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                            ADMIN
+                          </Badge>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">{user.email}</span>
                     </div>
                   </DropdownMenuLabel>
