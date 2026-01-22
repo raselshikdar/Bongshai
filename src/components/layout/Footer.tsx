@@ -2,7 +2,7 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Youtube } from "lucide-react"
 
 export const Footer = () => {
   return (
-    <footer className="bg-[#1a1a1a] text-white mt-12">
+    <footer className="mt-12" style={{ backgroundColor: '#0f172a', color: 'white' }}>
       <div className="container py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* About */}

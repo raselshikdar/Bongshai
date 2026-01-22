@@ -134,7 +134,12 @@ export const Header = () => {
               <ThemeToggle />
             </div>
             
-            <Button variant="ghost" size="icon" className="hidden md:flex">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hidden md:flex"
+              onClick={() => navigate("/wishlist")}
+            >
               <Heart className="h-5 w-5" />
             </Button>
             
