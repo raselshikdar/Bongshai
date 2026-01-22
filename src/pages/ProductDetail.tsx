@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ArrowLeft, ChevronRight } from "lucide-react";
+import { Star, ShoppingCart, Heart, Share2, Truck, Shield, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +11,10 @@ import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
+import { useWishlist } from "@/hooks/useWishlist";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -40,6 +42,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -52,6 +55,8 @@ const ProductDetail = () => {
   const [comment, setComment] = useState("");
   const [canReview, setCanReview] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const isWishlisted = id ? isInWishlist(id) : false;
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -139,8 +144,16 @@ const ProductDetail = () => {
     toast.success(`Added ${quantity} item(s) to cart!`);
   };
 
+  const handleWishlist = async () => {
+    if (!id) return;
+    await toggleWishlist(id);
+  };
+
   const handleSubmitReview = async () => {
-    if (!user || !id) return;
+    if (!user || !id) {
+      toast.error("Please login to submit a review");
+      return;
+    }
     
     setIsSubmittingReview(true);
     
@@ -227,7 +240,8 @@ const ProductDetail = () => {
               <img
                 src={product.images_url[selectedImage] || "/placeholder.svg"}
                 alt={product.name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain max-w-full"
+                style={{ maxWidth: "100%", objectFit: "contain" }}
               />
               {discount > 0 && (
                 <Badge className="absolute top-4 left-4 gradient-flash text-white">
@@ -272,7 +286,7 @@ const ProductDetail = () => {
                   <span className="text-sm ml-1">({product.review_count} reviews)</span>
                 </div>
                 {product.stock > 0 ? (
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                     In Stock
                   </Badge>
                 ) : (
@@ -291,7 +305,7 @@ const ProductDetail = () => {
                 )}
               </div>
               {discount > 0 && (
-                <p className="text-sm text-green-600 font-medium">
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
                   You save ৳{(product.original_price! - product.price).toLocaleString()} ({discount}%)
                 </p>
               )}
@@ -341,8 +355,13 @@ const ProductDetail = () => {
                   <ShoppingCart className="h-5 w-5 mr-2" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="lg">
-                  <Heart className="h-5 w-5" />
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  onClick={handleWishlist}
+                  className={cn(isWishlisted && "text-destructive border-destructive")}
+                >
+                  <Heart className={cn("h-5 w-5", isWishlisted && "fill-current")} />
                 </Button>
                 <Button variant="outline" size="lg">
                   <Share2 className="h-5 w-5" />
@@ -377,7 +396,7 @@ const ProductDetail = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Write Review */}
-            {canReview && (
+            {user && canReview && (
               <div className="p-4 border rounded-lg bg-muted/30">
                 <h4 className="font-medium mb-4">Write a Review</h4>
                 <div className="space-y-4">
@@ -415,6 +434,25 @@ const ProductDetail = () => {
                     {isSubmittingReview ? "Submitting..." : "Submit Review"}
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {/* Login prompt for non-logged in users */}
+            {!user && (
+              <div className="p-4 border rounded-lg bg-muted/30 text-center">
+                <p className="text-muted-foreground mb-2">Please login to write a review</p>
+                <Button variant="outline" onClick={() => navigate("/auth")}>
+                  Login
+                </Button>
+              </div>
+            )}
+
+            {/* Purchased but already reviewed or not purchased */}
+            {user && !canReview && (
+              <div className="p-4 border rounded-lg bg-muted/30 text-center">
+                <p className="text-muted-foreground">
+                  Only customers who have purchased and received this product can write a review.
+                </p>
               </div>
             )}
 

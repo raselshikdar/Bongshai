@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          minimum_order: number | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          minimum_order?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          minimum_order?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -61,6 +106,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          admin_notes: string | null
           created_at: string
           id: string
           notes: string | null
@@ -69,10 +115,12 @@ export type Database = {
           shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
+          tracking_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -81,10 +129,12 @@ export type Database = {
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price: number
+          tracking_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -93,6 +143,7 @@ export type Database = {
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -234,6 +285,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Plus,
-  Edit, Trash2, Upload, X, Save, Eye, Search, Filter
+  LayoutDashboard, Package, ShoppingCart, Users, Plus,
+  Edit, Trash2, Upload, X, Save, Eye, Search, Filter, Tag, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +44,35 @@ interface Order {
     thana: string;
     area: string;
   };
+  tracking_number: string | null;
+  admin_notes: string | null;
   created_at: string;
   profiles?: {
     name: string;
     phone: string;
   };
+}
+
+interface UserProfile {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  created_at: string;
+  email?: string;
+}
+
+interface Coupon {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: string;
+  discount_value: number;
+  minimum_order: number;
+  max_uses: number | null;
+  used_count: number;
+  is_active: boolean;
+  expires_at: string | null;
+  created_at: string;
 }
 
 interface Analytics {
@@ -68,6 +92,8 @@ const Admin = () => {
   
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [analytics, setAnalytics] = useState<Analytics>({ totalSales: 0, totalOrders: 0, totalUsers: 0, pendingOrders: 0 });
   const [isLoading, setIsLoading] = useState(true);
   
@@ -86,6 +112,28 @@ const Admin = () => {
     is_flash_sale: false,
   });
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Coupon form
+  const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [couponForm, setCouponForm] = useState({
+    code: "",
+    description: "",
+    discount_type: "percentage",
+    discount_value: "",
+    minimum_order: "",
+    max_uses: "",
+    is_active: true,
+    expires_at: "",
+  });
+
+  // Order tracking dialog
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [orderTrackingForm, setOrderTrackingForm] = useState({
+    tracking_number: "",
+    admin_notes: "",
+  });
   
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,6 +178,26 @@ const Admin = () => {
       })));
     }
 
+    // Fetch users
+    const { data: usersData } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (usersData) {
+      setUsers(usersData);
+    }
+
+    // Fetch coupons
+    const { data: couponsData } = await supabase
+      .from("coupons")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (couponsData) {
+      setCoupons(couponsData);
+    }
+
     // Fetch analytics
     const { data: salesData } = await supabase
       .from("orders")
@@ -169,6 +237,20 @@ const Admin = () => {
       is_flash_sale: false,
     });
     setEditingProduct(null);
+  };
+
+  const resetCouponForm = () => {
+    setCouponForm({
+      code: "",
+      description: "",
+      discount_type: "percentage",
+      discount_value: "",
+      minimum_order: "",
+      max_uses: "",
+      is_active: true,
+      expires_at: "",
+    });
+    setEditingCoupon(null);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -267,6 +349,37 @@ const Admin = () => {
     }
   };
 
+  const handleEditOrder = (order: Order) => {
+    setEditingOrder(order);
+    setOrderTrackingForm({
+      tracking_number: order.tracking_number || "",
+      admin_notes: order.admin_notes || "",
+    });
+    setIsOrderDialogOpen(true);
+  };
+
+  const handleSaveOrderTracking = async () => {
+    if (!editingOrder) return;
+
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        tracking_number: orderTrackingForm.tracking_number || null,
+        admin_notes: orderTrackingForm.admin_notes || null,
+      })
+      .eq("id", editingOrder.id);
+
+    if (error) {
+      toast.error("Failed to update order");
+    } else {
+      toast.success("Order updated!");
+      fetchData();
+    }
+
+    setIsOrderDialogOpen(false);
+    setEditingOrder(null);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
@@ -302,14 +415,95 @@ const Admin = () => {
     }));
   };
 
+  // Coupon handlers
+  const handleEditCoupon = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setCouponForm({
+      code: coupon.code,
+      description: coupon.description || "",
+      discount_type: coupon.discount_type,
+      discount_value: coupon.discount_value.toString(),
+      minimum_order: coupon.minimum_order?.toString() || "",
+      max_uses: coupon.max_uses?.toString() || "",
+      is_active: coupon.is_active,
+      expires_at: coupon.expires_at ? coupon.expires_at.split("T")[0] : "",
+    });
+    setIsCouponDialogOpen(true);
+  };
+
+  const handleSaveCoupon = async () => {
+    if (!couponForm.code || !couponForm.discount_value) {
+      toast.error("Please fill in code and discount value");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const couponData = {
+      code: couponForm.code.toUpperCase().trim(),
+      description: couponForm.description || null,
+      discount_type: couponForm.discount_type,
+      discount_value: parseFloat(couponForm.discount_value),
+      minimum_order: couponForm.minimum_order ? parseFloat(couponForm.minimum_order) : 0,
+      max_uses: couponForm.max_uses ? parseInt(couponForm.max_uses) : null,
+      is_active: couponForm.is_active,
+      expires_at: couponForm.expires_at ? new Date(couponForm.expires_at).toISOString() : null,
+    };
+
+    if (editingCoupon) {
+      const { error } = await supabase
+        .from("coupons")
+        .update(couponData)
+        .eq("id", editingCoupon.id);
+
+      if (error) {
+        toast.error("Failed to update coupon");
+      } else {
+        toast.success("Coupon updated!");
+        fetchData();
+      }
+    } else {
+      const { error } = await supabase
+        .from("coupons")
+        .insert(couponData);
+
+      if (error) {
+        toast.error("Failed to create coupon");
+      } else {
+        toast.success("Coupon created!");
+        fetchData();
+      }
+    }
+
+    setIsSaving(false);
+    setIsCouponDialogOpen(false);
+    resetCouponForm();
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this coupon?")) return;
+
+    const { error } = await supabase
+      .from("coupons")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to delete coupon");
+    } else {
+      toast.success("Coupon deleted");
+      fetchData();
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "processing": return "bg-blue-100 text-blue-800";
-      case "shipped": return "bg-purple-100 text-purple-800";
-      case "delivered": return "bg-green-100 text-green-800";
-      case "cancelled": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "pending": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+      case "processing": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+      case "shipped": return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
+      case "delivered": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+      case "cancelled": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
     }
   };
 
@@ -368,7 +562,7 @@ const Admin = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Total Sales</CardDescription>
-                <CardTitle className="text-3xl text-green-600">
+                <CardTitle className="text-3xl text-green-600 dark:text-green-400">
                   ৳{analytics.totalSales.toLocaleString()}
                 </CardTitle>
               </CardHeader>
@@ -382,7 +576,7 @@ const Admin = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Pending Orders</CardDescription>
-                <CardTitle className="text-3xl text-yellow-600">{analytics.pendingOrders}</CardTitle>
+                <CardTitle className="text-3xl text-yellow-600 dark:text-yellow-400">{analytics.pendingOrders}</CardTitle>
               </CardHeader>
             </Card>
             <Card>
@@ -402,6 +596,14 @@ const Admin = () => {
               <TabsTrigger value="orders" className="gap-2">
                 <ShoppingCart className="h-4 w-4" />
                 Orders
+              </TabsTrigger>
+              <TabsTrigger value="users" className="gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+              <TabsTrigger value="coupons" className="gap-2">
+                <Tag className="h-4 w-4" />
+                Promo Codes
               </TabsTrigger>
             </TabsList>
 
@@ -602,8 +804,8 @@ const Admin = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              {product.is_featured && <Badge className="bg-purple-100 text-purple-800">Featured</Badge>}
-                              {product.is_flash_sale && <Badge className="bg-orange-100 text-orange-800">Flash Sale</Badge>}
+                              {product.is_featured && <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">Featured</Badge>}
+                              {product.is_flash_sale && <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300">Flash Sale</Badge>}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
@@ -650,6 +852,55 @@ const Admin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Order Tracking Dialog */}
+                  <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Order Details & Tracking</DialogTitle>
+                        <DialogDescription>
+                          Update tracking information and admin notes
+                        </DialogDescription>
+                      </DialogHeader>
+                      {editingOrder && (
+                        <div className="space-y-4 py-4">
+                          <div className="grid gap-2 p-3 bg-muted rounded-lg">
+                            <p><strong>Order ID:</strong> #{editingOrder.id.slice(0, 8).toUpperCase()}</p>
+                            <p><strong>Customer:</strong> {editingOrder.profiles?.name || "N/A"}</p>
+                            <p><strong>Phone:</strong> {editingOrder.profiles?.phone || "N/A"}</p>
+                            <p><strong>Address:</strong> {editingOrder.shipping_address?.area}, {editingOrder.shipping_address?.thana}, {editingOrder.shipping_address?.district}</p>
+                            <p><strong>Total:</strong> ৳{editingOrder.total_price.toLocaleString()}</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Tracking Number</Label>
+                            <Input
+                              value={orderTrackingForm.tracking_number}
+                              onChange={(e) => setOrderTrackingForm(p => ({ ...p, tracking_number: e.target.value }))}
+                              placeholder="Enter tracking number"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Admin Notes</Label>
+                            <Textarea
+                              value={orderTrackingForm.admin_notes}
+                              onChange={(e) => setOrderTrackingForm(p => ({ ...p, admin_notes: e.target.value }))}
+                              placeholder="Internal notes about this order..."
+                              rows={3}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-4">
+                            <Button variant="outline" onClick={() => setIsOrderDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button onClick={handleSaveOrderTracking} className="gradient-primary">
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -666,7 +917,12 @@ const Admin = () => {
                       {filteredOrders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">
-                            #{order.id.slice(0, 8).toUpperCase()}
+                            <div>
+                              #{order.id.slice(0, 8).toUpperCase()}
+                              {order.tracking_number && (
+                                <p className="text-xs text-muted-foreground">Track: {order.tracking_number}</p>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div>
@@ -689,21 +945,26 @@ const Admin = () => {
                             {new Date(order.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <Select
-                              value={order.status}
-                              onValueChange={(v) => handleUpdateOrderStatus(order.id, v as "pending" | "processing" | "shipped" | "delivered" | "cancelled")}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="processing">Processing</SelectItem>
-                                <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={order.status}
+                                onValueChange={(v) => handleUpdateOrderStatus(order.id, v as "pending" | "processing" | "shipped" | "delivered" | "cancelled")}
+                              >
+                                <SelectTrigger className="w-28">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="processing">Processing</SelectItem>
+                                  <SelectItem value="shipped">Shipped</SelectItem>
+                                  <SelectItem value="delivered">Delivered</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button variant="ghost" size="icon" onClick={() => handleEditOrder(order)}>
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -712,6 +973,225 @@ const Admin = () => {
                   {filteredOrders.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       No orders found
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Users Tab */}
+            <TabsContent value="users">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Registered Users</CardTitle>
+                  <CardDescription>View all registered users on the platform</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium">{u.name || "No name"}</TableCell>
+                          <TableCell>{u.phone || "N/A"}</TableCell>
+                          <TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {users.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No users found
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Coupons Tab */}
+            <TabsContent value="coupons">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Promo Code Management</CardTitle>
+                      <CardDescription>Create and manage discount codes</CardDescription>
+                    </div>
+                    <Dialog open={isCouponDialogOpen} onOpenChange={(open) => {
+                      setIsCouponDialogOpen(open);
+                      if (!open) resetCouponForm();
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button className="gradient-primary">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Coupon
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{editingCoupon ? "Edit Coupon" : "Create New Coupon"}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Code *</Label>
+                              <Input
+                                value={couponForm.code}
+                                onChange={(e) => setCouponForm(p => ({ ...p, code: e.target.value.toUpperCase() }))}
+                                placeholder="SUMMER20"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Discount Type</Label>
+                              <Select
+                                value={couponForm.discount_type}
+                                onValueChange={(v) => setCouponForm(p => ({ ...p, discount_type: v }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                  <SelectItem value="fixed">Fixed Amount (৳)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Description</Label>
+                            <Input
+                              value={couponForm.description}
+                              onChange={(e) => setCouponForm(p => ({ ...p, description: e.target.value }))}
+                              placeholder="Summer sale discount"
+                            />
+                          </div>
+                          
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Discount Value *</Label>
+                              <Input
+                                type="number"
+                                value={couponForm.discount_value}
+                                onChange={(e) => setCouponForm(p => ({ ...p, discount_value: e.target.value }))}
+                                placeholder={couponForm.discount_type === "percentage" ? "20" : "100"}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Minimum Order (৳)</Label>
+                              <Input
+                                type="number"
+                                value={couponForm.minimum_order}
+                                onChange={(e) => setCouponForm(p => ({ ...p, minimum_order: e.target.value }))}
+                                placeholder="500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Max Uses</Label>
+                              <Input
+                                type="number"
+                                value={couponForm.max_uses}
+                                onChange={(e) => setCouponForm(p => ({ ...p, max_uses: e.target.value }))}
+                                placeholder="Unlimited"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Expires At</Label>
+                              <Input
+                                type="date"
+                                value={couponForm.expires_at}
+                                onChange={(e) => setCouponForm(p => ({ ...p, expires_at: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={couponForm.is_active}
+                              onCheckedChange={(v) => setCouponForm(p => ({ ...p, is_active: v }))}
+                            />
+                            <Label>Active</Label>
+                          </div>
+
+                          <div className="flex justify-end gap-4">
+                            <Button variant="outline" onClick={() => setIsCouponDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button onClick={handleSaveCoupon} disabled={isSaving} className="gradient-primary">
+                              <Save className="h-4 w-4 mr-2" />
+                              {isSaving ? "Saving..." : "Save Coupon"}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Discount</TableHead>
+                        <TableHead>Min Order</TableHead>
+                        <TableHead>Usage</TableHead>
+                        <TableHead>Expires</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {coupons.map((coupon) => (
+                        <TableRow key={coupon.id}>
+                          <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
+                          <TableCell>
+                            {coupon.discount_type === "percentage" 
+                              ? `${coupon.discount_value}%`
+                              : `৳${coupon.discount_value}`
+                            }
+                          </TableCell>
+                          <TableCell>৳{coupon.minimum_order || 0}</TableCell>
+                          <TableCell>
+                            {coupon.used_count} / {coupon.max_uses || "∞"}
+                          </TableCell>
+                          <TableCell>
+                            {coupon.expires_at 
+                              ? new Date(coupon.expires_at).toLocaleDateString()
+                              : "Never"
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={coupon.is_active 
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" 
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                            }>
+                              {coupon.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditCoupon(coupon)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteCoupon(coupon.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {coupons.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No coupons found. Create your first promo code!
                     </div>
                   )}
                 </CardContent>
