@@ -691,7 +691,7 @@ const Admin = () => {
                           <TableCell>
                             <Select
                               value={order.status}
-                              onValueChange={(v) => handleUpdateOrderStatus(order.id, v)}
+                              onValueChange={(v) => handleUpdateOrderStatus(order.id, v as "pending" | "processing" | "shipped" | "delivered" | "cancelled")}
                             >
                               <SelectTrigger className="w-32">
                                 <SelectValue />
