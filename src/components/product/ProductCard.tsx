@@ -4,6 +4,7 @@ import { Heart, ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -32,9 +33,11 @@ export const ProductCard = ({
   isFlashSale = false,
 }: ProductCardProps) => {
   const navigate = useNavigate();
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+
+  const isWishlisted = isInWishlist(id);
 
   const discount = originalPrice
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
@@ -47,9 +50,9 @@ export const ProductCard = ({
     setTimeout(() => setIsAdding(false), 400);
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
+    await toggleWishlist(id);
   };
 
   return (
@@ -87,7 +90,7 @@ export const ProductCard = ({
           variant="ghost"
           size="icon"
           className={cn(
-            "absolute top-2 right-2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm",
+            "absolute top-2 right-2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card",
             isWishlisted && "text-destructive"
           )}
           onClick={handleWishlist}
