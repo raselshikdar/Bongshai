@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ export const ProductCard = ({
   badge,
   isFlashSale = false,
 }: ProductCardProps) => {
+  const navigate = useNavigate();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
@@ -38,14 +40,23 @@ export const ProductCard = ({
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setIsAdding(true);
     addToCart({ id, name, nameBn, price, originalPrice, image });
     setTimeout(() => setIsAdding(false), 400);
   };
 
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsWishlisted(!isWishlisted);
+  };
+
   return (
-    <div className="group relative bg-card rounded-lg shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden">
+    <div 
+      className="group relative bg-card rounded-lg shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden cursor-pointer"
+      onClick={() => navigate(`/product/${id}`)}
+    >
       {/* Image container */}
       <div className="relative aspect-square overflow-hidden bg-muted">
         <img
@@ -79,7 +90,7 @@ export const ProductCard = ({
             "absolute top-2 right-2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm",
             isWishlisted && "text-destructive"
           )}
-          onClick={() => setIsWishlisted(!isWishlisted)}
+          onClick={handleWishlist}
         >
           <Heart className={cn("h-4 w-4", isWishlisted && "fill-current")} />
         </Button>
