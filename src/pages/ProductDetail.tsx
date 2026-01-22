@@ -80,17 +80,21 @@ const ProductDetail = () => {
     const fetchReviews = async () => {
       if (!id) return;
 
-      const { data } = await supabase
+      // Use left join (no !inner) to fetch reviews even if profile doesn't exist
+      const { data, error } = await supabase
         .from("reviews")
         .select(`
           id,
           rating,
           comment,
           created_at,
-          profiles!inner(name)
+          user_id,
+          profiles(name)
         `)
         .eq("product_id", id)
         .order("created_at", { ascending: false });
+
+      console.log("Reviews fetch result:", { data, error });
 
       if (data) {
         setReviews(data.map((r: any) => ({
@@ -98,7 +102,7 @@ const ProductDetail = () => {
           rating: r.rating,
           comment: r.comment,
           created_at: r.created_at,
-          user_name: r.profiles?.name || "Anonymous",
+          user_name: r.profiles?.name || "Customer",
         })));
       }
     };
@@ -261,9 +265,9 @@ const ProductDetail = () => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold">{product.name}</h1>
+          <div className="flex flex-col w-full space-y-6 min-w-0">
+            <div className="break-words">
+              <h1 className="text-2xl font-bold break-words">{product.name}</h1>
               
               <div className="flex items-center gap-4 mt-2">
                 <div className="flex items-center gap-1">
@@ -308,9 +312,9 @@ const ProductDetail = () => {
             <Separator />
 
             {product.description && (
-              <div>
+              <div className="break-words">
                 <h3 className="font-medium mb-2">Description</h3>
-                <p className="text-muted-foreground">{product.description}</p>
+                <p className="text-muted-foreground break-words whitespace-pre-wrap">{product.description}</p>
               </div>
             )}
 
