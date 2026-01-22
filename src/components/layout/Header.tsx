@@ -134,10 +134,10 @@ export const Header = () => {
               <ThemeToggle />
             </div>
             
+            {/* Wishlist - visible on all sizes */}
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hidden md:flex"
               onClick={() => navigate("/wishlist")}
             >
               <Heart className="h-5 w-5" />
