@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { Tag, ArrowRight } from "lucide-react";
+import { Tag, ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
   id: string;
@@ -15,35 +16,46 @@ interface Product {
   is_featured: boolean;
 }
 
+const fetchDailyDeals = async (): Promise<Product[]> => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, price, original_price, images_url, rating, review_count, is_featured")
+    .order("created_at", { ascending: false })
+    .limit(8);
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const DailyDeals = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("id, name, price, original_price, images_url, rating, review_count, is_featured")
-        .order("created_at", { ascending: false })
-        .limit(8);
-
-      if (data) setProducts(data);
-      setIsLoading(false);
-    };
-
-    fetchProducts();
-  }, []);
+  const { data: products = [], isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["daily-deals"],
+    queryFn: fetchDailyDeals,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+  });
 
   if (isLoading) {
     return (
       <section className="py-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 w-48 bg-muted rounded" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="aspect-square bg-muted rounded-lg" />
-            ))}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div>
+              <Skeleton className="h-6 w-32 mb-1" />
+              <Skeleton className="h-4 w-24" />
+            </div>
           </div>
+          <Skeleton className="h-9 w-24" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-square rounded-lg" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -65,10 +77,21 @@ export const DailyDeals = () => {
           </div>
         </div>
 
-        <Button variant="ghost" className="text-primary hover:text-primary/80 gap-1">
-          View All
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button variant="ghost" className="text-primary hover:text-primary/80 gap-1">
+            View All
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Products Grid */}
