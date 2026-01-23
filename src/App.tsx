@@ -20,6 +20,15 @@ import Category from "./pages/Category";
 import Products from "./pages/Products";
 import Search from "./pages/Search";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import TrackOrder from "./pages/TrackOrder";
+import Returns from "./pages/Returns";
+import Shipping from "./pages/Shipping";
+import PaymentMethods from "./pages/PaymentMethods";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +51,15 @@ const App = () => (
                   <Route path="/search" element={<Search />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/track-order" element={<TrackOrder />} />
+                  <Route path="/returns" element={<Returns />} />
+                  <Route path="/shipping" element={<Shipping />} />
+                  <Route path="/payment-methods" element={<PaymentMethods />} />
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Profile />

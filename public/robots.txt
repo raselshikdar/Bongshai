@@ -1,14 +1,17 @@
+# HaatBazar E-commerce SEO Optimization
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /checkout
+
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
-User-agent: Twitterbot
-Allow: /
-
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
+Sitemap: https://haatbazar.lovable.app/sitemap.xml
