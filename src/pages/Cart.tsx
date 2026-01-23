@@ -28,7 +28,8 @@ const Cart = () => {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const subtotal = getTotalPrice();
-  const shippingFee = subtotal > 500 ? 0 : 60;
+  // Display estimated shipping fee in cart (will be calculated accurately at checkout)
+  const estimatedShippingFee = subtotal > 500 ? 0 : 70; // Minimum is Dhaka rate
 
   // Calculate discount
   let discountAmount = 0;
@@ -40,7 +41,7 @@ const Cart = () => {
     }
   }
 
-  const total = subtotal - discountAmount + shippingFee;
+  const total = subtotal - discountAmount + estimatedShippingFee;
 
   const handleApplyCoupon = async () => {
     if (!promoCode.trim()) {
@@ -279,18 +280,19 @@ const Cart = () => {
                 )}
 
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
+                  <span className="text-muted-foreground">Shipping (est.)</span>
                   <span className="font-medium">
-                    {shippingFee === 0 ? (
+                    {estimatedShippingFee === 0 ? (
                       <span className="text-green-600 dark:text-green-400">FREE</span>
                     ) : (
-                      `৳${shippingFee}`
+                      <span>৳{estimatedShippingFee}+</span>
                     )}
                   </span>
                 </div>
-                {shippingFee > 0 && (
+                {estimatedShippingFee > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Add ৳{(500 - subtotal).toLocaleString()} more for free shipping
+                    Dhaka: ৳70 | Outside Dhaka: ৳120
+                    {subtotal < 500 && ` • Add ৳${(500 - subtotal).toLocaleString()} more for free shipping`}
                   </p>
                 )}
                 <Separator />

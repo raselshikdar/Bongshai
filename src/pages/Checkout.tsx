@@ -55,7 +55,20 @@ const Checkout = () => {
   }, [cartItems, navigate]);
 
   const subtotal = getTotalPrice();
-  const shippingFee = subtotal > 500 ? 0 : 60;
+  
+  // Intelligent delivery charge logic based on district
+  const calculateShippingFee = () => {
+    // Free delivery threshold (if applicable)
+    if (subtotal > 500) return 0;
+    
+    // District-based shipping: Dhaka = ৳70, Others = ৳120
+    if (!district) return 0; // Will be calculated once district is selected
+    
+    const isDhaka = district.toLowerCase() === "dhaka";
+    return isDhaka ? 70 : 120;
+  };
+  
+  const shippingFee = calculateShippingFee();
   const total = subtotal + shippingFee;
 
   // Check if phone is valid for COD
@@ -172,10 +185,12 @@ const Checkout = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>District *</Label>
+                      <Label className="flex items-center gap-1">
+                        District <span className="text-destructive">*</span>
+                      </Label>
                       <Select value={district} onValueChange={(v) => { setDistrict(v); setThana(""); }}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select district" />
+                        <SelectTrigger className={!district ? "border-destructive/50" : ""}>
+                          <SelectValue placeholder="Select district (required)" />
                         </SelectTrigger>
                         <SelectContent>
                           {districts.map((d) => (
@@ -183,6 +198,12 @@ const Checkout = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {district && (
+                        <p className="text-xs text-muted-foreground">
+                          Delivery: {district.toLowerCase() === "dhaka" ? "৳70" : "৳120"} 
+                          {subtotal > 500 && " (Free over ৳500)"}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label>Thana *</Label>
