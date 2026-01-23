@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, Plus,
   Edit, Trash2, Upload, X, Save, Eye, Search, Filter, Tag, FileText
 } from "lucide-react";
+import { OrderDetailModal } from "@/components/order/OrderDetailModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,6 +145,7 @@ const Admin = () => {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
+  const [viewOrderId, setViewOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -1060,7 +1062,10 @@ const Admin = () => {
                                   Cancel
                                 </Button>
                               )}
-                              <Button variant="ghost" size="icon" onClick={() => handleEditOrder(order)}>
+                              <Button variant="ghost" size="icon" onClick={() => setViewOrderId(order.id)} title="View Order Details">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleEditOrder(order)} title="Edit Tracking">
                                 <FileText className="h-4 w-4" />
                               </Button>
                             </div>
@@ -1303,6 +1308,14 @@ const Admin = () => {
           </Tabs>
         </div>
       </main>
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        orderId={viewOrderId}
+        isOpen={!!viewOrderId}
+        onClose={() => setViewOrderId(null)}
+        isAdmin={true}
+      />
     </div>
   );
 };

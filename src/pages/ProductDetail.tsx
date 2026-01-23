@@ -116,7 +116,7 @@ const ProductDetail = () => {
     fetchReviews();
   }, [id]);
 
-  // Check if user can review - separate effect
+  // Check if user can review - must have a DELIVERED order with this product
   useEffect(() => {
     const checkCanReview = async () => {
       if (!id || !user) {
@@ -124,7 +124,13 @@ const ProductDetail = () => {
         return;
       }
 
-      // Allow any logged-in user to review (relaxed from purchaser-only)
+      // Check if user has a delivered order containing this product
+      const { data: hasPurchased } = await supabase.rpc("has_purchased", {
+        _user_id: user.id,
+        _product_id: id,
+      });
+
+      // Also check if user has already reviewed this product
       const { data: existingReview } = await supabase
         .from("reviews")
         .select("id")
@@ -132,8 +138,8 @@ const ProductDetail = () => {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      // User can review if they haven't already reviewed
-      setCanReview(!existingReview);
+      // User can review if they purchased and haven't already reviewed
+      setCanReview(hasPurchased && !existingReview);
     };
 
     checkCanReview();
@@ -463,11 +469,11 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Logged in but already reviewed message */}
+            {/* Logged in but can't review - show appropriate message */}
             {user && !canReview && (
               <div className="p-4 border rounded-lg bg-muted/30 text-center">
                 <p className="text-muted-foreground">
-                  You have already reviewed this product or you're not logged in correctly.
+                  You can only review products you have purchased and received (order status: Delivered).
                 </p>
               </div>
             )}
