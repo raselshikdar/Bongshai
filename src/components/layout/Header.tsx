@@ -123,7 +123,15 @@ export const Header = () => {
           </Link>
 
           {/* Search bar - Responsive */}
-          <div className="flex-1 min-w-0 max-w-2xl hidden md:flex items-center gap-2 mx-4">
+          <form 
+            className="flex-1 min-w-0 max-w-2xl hidden md:flex items-center gap-2 mx-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (searchQuery.trim()) {
+                navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+              }
+            }}
+          >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -134,10 +142,10 @@ export const Header = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button className="h-10 px-4 gradient-primary hover:opacity-90 transition-opacity shrink-0">
+            <Button type="submit" className="h-10 px-4 gradient-primary hover:opacity-90 transition-opacity shrink-0">
               <Search className="h-4 w-4" />
             </Button>
-          </div>
+          </form>
 
           {/* Actions - Always visible on right */}
           <div className="flex items-center gap-1 shrink-0 ml-auto">
@@ -252,7 +260,15 @@ export const Header = () => {
         </div>
         
         {/* Mobile Search - Own row */}
-        <div className="md:hidden px-4 pb-3">
+        <form 
+          className="md:hidden px-4 pb-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+            }
+          }}
+        >
           <div className="relative flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -264,11 +280,11 @@ export const Header = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button className="h-10 px-3 gradient-primary hover:opacity-90 transition-opacity shrink-0">
+            <Button type="submit" className="h-10 px-3 gradient-primary hover:opacity-90 transition-opacity shrink-0">
               <Search className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </form>
       </div>
 
       {/* Categories bar - Desktop */}
