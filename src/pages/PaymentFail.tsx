@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const PaymentFail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("order_id");
+  const pendingId = searchParams.get("pending_id");
+  const orderId = searchParams.get("order_id"); // Backward compatibility
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,16 +29,15 @@ const PaymentFail = () => {
                   Payment Failed
                 </h1>
                 <p className="text-muted-foreground">
-                  We couldn't process your payment. Please try again or choose a different payment method.
+                  We couldn't process your payment. Please try again or choose Cash on Delivery.
                 </p>
               </div>
 
-              {orderId && (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">Order ID</p>
-                  <p className="font-mono text-sm font-medium">{orderId.slice(0, 8)}...</p>
-                </div>
-              )}
+              <Alert className="bg-destructive/10 border-destructive/30 text-left">
+                <AlertDescription className="text-sm">
+                  Don't worry! Your cart items are still saved. No order was placed and no payment was charged.
+                </AlertDescription>
+              </Alert>
 
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-left">
                 <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">

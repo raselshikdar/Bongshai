@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const PaymentCancel = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("order_id");
+  const pendingId = searchParams.get("pending_id");
+  const orderId = searchParams.get("order_id"); // Backward compatibility
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,22 +29,15 @@ const PaymentCancel = () => {
                   Payment Cancelled
                 </h1>
                 <p className="text-muted-foreground">
-                  You cancelled the payment process. Your order has not been placed yet.
+                  You cancelled the payment process. No order has been placed.
                 </p>
               </div>
 
-              {orderId && (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">Order ID (Pending)</p>
-                  <p className="font-mono text-sm font-medium">{orderId.slice(0, 8)}...</p>
-                </div>
-              )}
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  💡 <strong>Tip:</strong> Your cart items are still saved. You can continue shopping or complete your order later.
-                </p>
-              </div>
+              <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-left">
+                <AlertDescription className="text-sm text-blue-700 dark:text-blue-300">
+                  💡 Your cart items are still saved. You can complete your order later or choose Cash on Delivery.
+                </AlertDescription>
+              </Alert>
 
               <div className="flex flex-col gap-3">
                 <Button 

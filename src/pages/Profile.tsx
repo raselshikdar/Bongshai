@@ -22,6 +22,8 @@ interface Order {
   total_price: number;
   status: string;
   payment_method: string;
+  payment_status: string | null;
+  payment_transaction_id: string | null;
   shipping_address: {
     district: string;
     thana: string;
@@ -113,6 +115,16 @@ const Profile = () => {
       case "delivered": return "bg-green-100 text-green-800";
       case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getPaymentStatusColor = (status: string | null) => {
+    switch (status) {
+      case "paid": return "bg-green-100 text-green-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "failed": return "bg-red-100 text-red-800";
+      case "cancelled": return "bg-gray-100 text-gray-800";
+      default: return "bg-yellow-100 text-yellow-800";
     }
   };
 
@@ -299,9 +311,16 @@ const Profile = () => {
                               day: "numeric",
                             })}
                           </p>
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </Badge>
+                            <Badge className={getPaymentStatusColor(order.payment_status)}>
+                              {order.payment_status === "paid" ? "✓ Paid" : 
+                               order.payment_status === "failed" ? "Failed" : 
+                               "Payment Pending"}
+                            </Badge>
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-lg">৳{order.total_price.toLocaleString()}</p>

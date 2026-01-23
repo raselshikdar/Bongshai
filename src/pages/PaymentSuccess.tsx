@@ -5,36 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/hooks/useCart";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("order_id");
-  const [isUpdating, setIsUpdating] = useState(true);
+  const pendingId = searchParams.get("pending_id");
+  const orderId = searchParams.get("order_id"); // For backward compatibility
+  const [isProcessing, setIsProcessing] = useState(true);
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    const updateOrderStatus = async () => {
-      if (orderId) {
-        try {
-          // Update order status to processing (payment confirmed)
-          const { error } = await supabase
-            .from("orders")
-            .update({ status: "processing" })
-            .eq("id", orderId);
+    // Clear cart on successful payment
+    clearCart();
+    
+    // Give IPN some time to process
+    const timer = setTimeout(() => {
+      setIsProcessing(false);
+    }, 2000);
 
-          if (error) {
-            console.error("Failed to update order status:", error);
-          }
-        } catch (err) {
-          console.error("Error updating order:", err);
-        }
-      }
-      setIsUpdating(false);
-    };
+    return () => clearTimeout(timer);
+  }, [clearCart]);
 
-    updateOrderStatus();
-  }, [orderId]);
+  const displayId = pendingId || orderId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,10 +37,13 @@ const PaymentSuccess = () => {
         <div className="max-w-lg mx-auto text-center">
           <Card className="border-green-200 dark:border-green-900">
             <CardContent className="pt-8 pb-8 space-y-6">
-              {isUpdating ? (
+              {isProcessing ? (
                 <>
                   <Loader2 className="h-16 w-16 text-primary animate-spin mx-auto" />
-                  <p className="text-muted-foreground">Processing your payment...</p>
+                  <div className="space-y-2">
+                    <h1 className="text-xl font-bold">Processing your payment...</h1>
+                    <p className="text-muted-foreground">Please wait while we confirm your order.</p>
+                  </div>
                 </>
               ) : (
                 <>
@@ -64,12 +60,18 @@ const PaymentSuccess = () => {
                     </p>
                   </div>
 
-                  {orderId && (
+                  {displayId && (
                     <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm text-muted-foreground">Order ID</p>
-                      <p className="font-mono text-sm font-medium">{orderId.slice(0, 8)}...</p>
+                      <p className="text-sm text-muted-foreground">Transaction Reference</p>
+                      <p className="font-mono text-sm font-medium">{displayId.slice(0, 8).toUpperCase()}...</p>
                     </div>
                   )}
+
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      ✓ Your order has been confirmed and is being processed. You'll receive an email confirmation shortly.
+                    </p>
+                  </div>
 
                   <div className="flex flex-col gap-3">
                     <Button 
