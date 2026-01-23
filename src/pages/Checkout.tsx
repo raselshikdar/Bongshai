@@ -57,9 +57,11 @@ const Checkout = () => {
   const subtotal = getTotalPrice();
   
   // Intelligent delivery charge logic based on district
+  const FREE_SHIPPING_THRESHOLD = 2500;
+  
   const calculateShippingFee = () => {
-    // Free delivery threshold (if applicable)
-    if (subtotal > 500) return 0;
+    // Free delivery for orders over ৳2500
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
     
     // District-based shipping: Dhaka = ৳70, Others = ৳120
     if (!district) return 0; // Will be calculated once district is selected
@@ -201,7 +203,7 @@ const Checkout = () => {
                       {district && (
                         <p className="text-xs text-muted-foreground">
                           Delivery: {district.toLowerCase() === "dhaka" ? "৳70" : "৳120"} 
-                          {subtotal > 500 && " (Free over ৳500)"}
+                          {subtotal >= FREE_SHIPPING_THRESHOLD && " (Free over ৳2,500)"}
                         </p>
                       )}
                     </div>

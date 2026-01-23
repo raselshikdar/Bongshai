@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Package, MapPin, Phone, User, CreditCard, Truck, Calendar, X } from "lucide-react";
+import { Package, MapPin, Phone, User, CreditCard, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { OrderTrackingTimeline } from "./OrderTrackingTimeline";
 
 interface OrderItem {
   id: string;
@@ -232,18 +233,14 @@ export const OrderDetailModal = ({ orderId, isOpen, onClose, isAdmin = false }: 
               </div>
             </div>
 
-            {/* Tracking Info */}
-            {order.tracking_number && (
-              <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Truck className="h-4 w-4" />
-                  Tracking Information
-                </h3>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-mono">{order.tracking_number}</p>
-                </div>
-              </div>
-            )}
+            {/* Order Tracking Timeline */}
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <OrderTrackingTimeline 
+                status={order.status} 
+                createdAt={order.created_at}
+                trackingNumber={order.tracking_number}
+              />
+            </div>
 
             {/* Customer Notes */}
             {order.notes && (
