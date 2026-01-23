@@ -29,8 +29,8 @@ const Cart = () => {
 
   const subtotal = getTotalPrice();
   const FREE_SHIPPING_THRESHOLD = 2500;
-  // Display estimated shipping fee in cart (will be calculated accurately at checkout)
-  const estimatedShippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 70; // Minimum is Dhaka rate
+  // Display estimated shipping fee in cart (Dhaka: ৳70, Outside: ৳120)
+  const estimatedShippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 70; // Dhaka rate as minimum
 
   // Calculate discount
   let discountAmount = 0;

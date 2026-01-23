@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, CreditCard, Truck, CheckCircle, ArrowLeft, ArrowRight, AlertCircle, Shield, Globe } from "lucide-react";
+import { MapPin, CreditCard, Truck, CheckCircle, ArrowLeft, ArrowRight, AlertCircle, Shield, Globe, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,12 @@ import { validateBangladeshPhone, isPhoneValidForCOD } from "@/lib/phoneValidati
 
 type PaymentMethod = "cod" | "online";
 
+interface AppliedCoupon {
+  code: string;
+  discount_type: string;
+  discount_value: number;
+}
+
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, getTotalPrice, clearCart } = useCart();
@@ -38,6 +44,21 @@ const Checkout = () => {
   
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  
+  // Promo code from cart
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
+  // Load applied coupon from session storage (set in Cart page)
+  useEffect(() => {
+    const storedCoupon = sessionStorage.getItem("appliedCoupon");
+    if (storedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(storedCoupon));
+      } catch {
+        sessionStorage.removeItem("appliedCoupon");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (profile) {
@@ -56,12 +77,24 @@ const Checkout = () => {
 
   const subtotal = getTotalPrice();
   
+  // Calculate discount amount
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === "percentage") {
+      discountAmount = Math.round((subtotal * appliedCoupon.discount_value) / 100);
+    } else {
+      discountAmount = appliedCoupon.discount_value;
+    }
+  }
+  
+  const discountedSubtotal = subtotal - discountAmount;
+  
   // Intelligent delivery charge logic based on district
   const FREE_SHIPPING_THRESHOLD = 2500;
   
   const calculateShippingFee = () => {
-    // Free delivery for orders over ৳2500
-    if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
+    // Free delivery for orders over ৳2500 (based on discounted subtotal)
+    if (discountedSubtotal >= FREE_SHIPPING_THRESHOLD) return 0;
     
     // District-based shipping: Dhaka = ৳70, Others = ৳120
     if (!district) return 0; // Will be calculated once district is selected
@@ -71,7 +104,8 @@ const Checkout = () => {
   };
   
   const shippingFee = calculateShippingFee();
-  const total = subtotal + shippingFee;
+  // CRITICAL: Final total = Subtotal - Discount + Shipping
+  const total = discountedSubtotal + shippingFee;
 
   // Check if phone is valid for COD
   const phoneValidForCOD = isPhoneValidForCOD(phone);
@@ -102,16 +136,18 @@ const Checkout = () => {
     try {
       // For online payment, create a pending order first (order will be created after successful payment)
       if (paymentMethod === "online") {
-        // Create pending order (temporary state)
+        // Create pending order with discount info
         const { data: pendingOrder, error: pendingError } = await supabase
           .from("pending_orders")
           .insert({
             user_id: user.id,
-            total_price: total,
+            total_price: total, // Already includes discount
             payment_method: "card",
             shipping_address: { district, thana, area },
             shipping_fee: shippingFee,
             notes,
+            promo_code_used: appliedCoupon?.code || null,
+            discount_amount: discountAmount,
             cart_items: cartItems.map(item => ({
               id: item.id,
               name: item.name,
@@ -127,10 +163,11 @@ const Checkout = () => {
 
         const productDetails = cartItems.map(item => `${item.name} x${item.quantity}`).join(", ");
         
+        // CRITICAL: Send the DISCOUNTED total to payment gateway
         const { data: sslData, error: sslError } = await supabase.functions.invoke('sslcommerz-init', {
           body: {
             pendingOrderId: pendingOrder.id,
-            amount: total,
+            amount: total, // This is the discounted total
             customerName: profile?.name || user.email?.split('@')[0] || 'Customer',
             customerEmail: user.email || '',
             customerPhone: phone,
@@ -142,7 +179,8 @@ const Checkout = () => {
         if (sslError) throw sslError;
 
         if (sslData?.gatewayUrl) {
-          // DO NOT clear cart - it will be cleared after successful payment
+          // Clear the coupon from session storage after successful order creation
+          sessionStorage.removeItem("appliedCoupon");
           // Redirect to SSLCommerz payment gateway
           window.location.href = sslData.gatewayUrl;
           return;
@@ -153,23 +191,47 @@ const Checkout = () => {
         }
       }
 
-      // For COD, create order directly
+      // For COD, create order directly with discount info
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
-          total_price: total,
+          total_price: total, // Discounted total
           status: "pending",
           payment_method: "cod",
           shipping_address: { district, thana, area },
           shipping_fee: shippingFee,
           notes,
           payment_status: "pending",
+          promo_code_used: appliedCoupon?.code || null,
+          discount_amount: discountAmount,
         })
         .select()
         .single();
 
       if (orderError) throw orderError;
+
+      // Increment coupon usage if applied
+      if (appliedCoupon) {
+        await supabase
+          .from("coupons")
+          .update({ used_count: supabase.rpc ? undefined : undefined }) // handled below
+          .eq("code", appliedCoupon.code);
+        
+        // Increment used_count
+        const { data: couponData } = await supabase
+          .from("coupons")
+          .select("used_count")
+          .eq("code", appliedCoupon.code)
+          .single();
+        
+        if (couponData) {
+          await supabase
+            .from("coupons")
+            .update({ used_count: (couponData.used_count || 0) + 1 })
+            .eq("code", appliedCoupon.code);
+        }
+      }
 
       // Create order items
       const orderItems = cartItems.map((item) => ({
@@ -188,21 +250,22 @@ const Checkout = () => {
 
       // Update stock for each product
       for (const item of cartItems) {
-        await supabase
+        const { data } = await supabase
           .from("products")
           .select("stock")
           .eq("id", item.id)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              supabase
-                .from("products")
-                .update({ stock: Math.max(0, data.stock - item.quantity) })
-                .eq("id", item.id);
-            }
-          });
+          .single();
+          
+        if (data) {
+          await supabase
+            .from("products")
+            .update({ stock: Math.max(0, data.stock - item.quantity) })
+            .eq("id", item.id);
+        }
       }
 
+      // Clear coupon from session storage
+      sessionStorage.removeItem("appliedCoupon");
       clearCart();
       toast.success("Order placed successfully!");
       navigate("/profile");
@@ -271,7 +334,7 @@ const Checkout = () => {
                       {district && (
                         <p className="text-xs text-muted-foreground">
                           Delivery: {district.toLowerCase() === "dhaka" ? "৳70" : "৳120"} 
-                          {subtotal >= FREE_SHIPPING_THRESHOLD && " (Free over ৳2,500)"}
+                          {discountedSubtotal >= FREE_SHIPPING_THRESHOLD && " (Free over ৳2,500)"}
                         </p>
                       )}
                     </div>
@@ -462,10 +525,27 @@ const Checkout = () => {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>৳{subtotal.toLocaleString()}</span>
                   </div>
+                  
+                  {/* Show discount as separate line item */}
+                  {appliedCoupon && discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        Discount ({appliedCoupon.code})
+                      </span>
+                      <span>-৳{discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
                     <span>{shippingFee === 0 ? <span className="text-green-600">FREE</span> : `৳${shippingFee}`}</span>
                   </div>
+                  {shippingFee > 0 && discountedSubtotal < FREE_SHIPPING_THRESHOLD && (
+                    <p className="text-xs text-muted-foreground">
+                      Add ৳{(FREE_SHIPPING_THRESHOLD - discountedSubtotal).toLocaleString()} more for free shipping
+                    </p>
+                  )}
                   <Separator />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>

@@ -71,12 +71,12 @@ Deno.serve(async (req) => {
       console.log('SSLCommerz validation result:', JSON.stringify(validateResult));
 
       if (validateResult.status === 'VALID' || validateResult.status === 'VALIDATED') {
-        // Create the actual order from pending order
+        // Create the actual order from pending order with promo code info
         const { data: newOrder, error: orderError } = await supabase
           .from('orders')
           .insert({
             user_id: pendingOrder.user_id,
-            total_price: pendingOrder.total_price,
+            total_price: pendingOrder.total_price, // Already discounted
             status: 'processing',
             payment_method: 'card',
             shipping_address: pendingOrder.shipping_address,
@@ -84,7 +84,9 @@ Deno.serve(async (req) => {
             notes: pendingOrder.notes,
             payment_status: 'paid',
             payment_transaction_id: bankTranId || valId,
-            admin_notes: `Online payment successful. Bank Tran ID: ${bankTranId || 'N/A'}, Val ID: ${valId}`
+            promo_code_used: pendingOrder.promo_code_used || null,
+            discount_amount: pendingOrder.discount_amount || 0,
+            admin_notes: `Online payment successful. Bank Tran ID: ${bankTranId || 'N/A'}, Val ID: ${valId}${pendingOrder.promo_code_used ? `. Promo: ${pendingOrder.promo_code_used} (-৳${pendingOrder.discount_amount})` : ''}`
           })
           .select()
           .single();
@@ -95,6 +97,24 @@ Deno.serve(async (req) => {
         }
 
         console.log('Order created from pending order:', newOrder.id);
+
+        // Increment coupon usage if promo code was used
+        if (pendingOrder.promo_code_used) {
+          const { data: couponData } = await supabase
+            .from('coupons')
+            .select('used_count')
+            .eq('code', pendingOrder.promo_code_used)
+            .single();
+          
+          if (couponData) {
+            await supabase
+              .from('coupons')
+              .update({ used_count: (couponData.used_count || 0) + 1 })
+              .eq('code', pendingOrder.promo_code_used);
+            
+            console.log('Coupon usage incremented:', pendingOrder.promo_code_used);
+          }
+        }
 
         // Create order items from cart_items
         const cartItems = pendingOrder.cart_items as Array<{
