@@ -239,6 +239,7 @@ export const OrderDetailModal = ({ orderId, isOpen, onClose, isAdmin = false }: 
                 status={order.status} 
                 createdAt={order.created_at}
                 trackingNumber={order.tracking_number}
+                district={order.shipping_address?.district}
               />
             </div>
 

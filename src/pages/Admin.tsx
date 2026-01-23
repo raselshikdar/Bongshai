@@ -375,6 +375,8 @@ const Admin = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: "pending" | "processing" | "shipped" | "delivered" | "cancelled") => {
+    const order = orders.find(o => o.id === orderId);
+    
     const { error } = await supabase
       .from("orders")
       .update({ status })
@@ -385,8 +387,8 @@ const Admin = () => {
     } else {
       toast.success("Order status updated");
       // Update local state instead of full refetch
-      setOrders(prev => prev.map(order => 
-        order.id === orderId ? { ...order, status } : order
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status } : o
       ));
       // Update analytics for pending count
       if (status === "pending" || status === "delivered") {
@@ -397,6 +399,26 @@ const Admin = () => {
             ? prev.totalSales + (orders.find(o => o.id === orderId)?.total_price || 0)
             : prev.totalSales
         }));
+      }
+
+      // Send email notification via edge function
+      if (order) {
+        try {
+          await supabase.functions.invoke('send-order-notification', {
+            body: {
+              orderId,
+              newStatus: status,
+              userId: order.user_id,
+              userName: order.profiles?.name,
+              trackingNumber: order.tracking_number,
+              shippingAddress: order.shipping_address
+            }
+          });
+          console.log("Email notification triggered for order:", orderId);
+        } catch (emailError) {
+          console.error("Failed to send email notification:", emailError);
+          // Don't show error to user - status update was successful
+        }
       }
     }
   };
