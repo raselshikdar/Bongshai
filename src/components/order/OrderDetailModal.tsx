@@ -19,6 +19,8 @@ interface OrderDetail {
   total_price: number;
   status: string;
   payment_method: string;
+  payment_status: string | null;
+  payment_transaction_id: string | null;
   shipping_address: {
     district: string;
     thana: string;
@@ -58,6 +60,16 @@ const getPaymentMethodLabel = (method: string) => {
     case "nagad": return "Nagad";
     case "card": return "Card Payment";
     default: return method;
+  }
+};
+
+const getPaymentStatusColor = (status: string | null) => {
+  switch (status) {
+    case "paid": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+    case "pending": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+    case "failed": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+    case "cancelled": return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+    default: return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
   }
 };
 
@@ -230,6 +242,21 @@ export const OrderDetailModal = ({ orderId, isOpen, onClose, isAdmin = false }: 
                   <span className="text-muted-foreground">Payment Method</span>
                   <Badge variant="outline">{getPaymentMethodLabel(order.payment_method)}</Badge>
                 </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-muted-foreground">Payment Status</span>
+                  <Badge className={getPaymentStatusColor(order.payment_status)}>
+                    {order.payment_status === "paid" ? "✓ Paid" : 
+                     order.payment_status === "failed" ? "Failed" : 
+                     order.payment_status === "cancelled" ? "Cancelled" : 
+                     "Pending"}
+                  </Badge>
+                </div>
+                {order.payment_transaction_id && (
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-muted-foreground">Transaction ID</span>
+                    <span className="font-mono text-xs">{order.payment_transaction_id}</span>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -100,17 +100,71 @@ const Checkout = () => {
     setIsPlacingOrder(true);
 
     try {
-      // Create order
+      // For online payment, create a pending order first (order will be created after successful payment)
+      if (paymentMethod === "online") {
+        // Create pending order (temporary state)
+        const { data: pendingOrder, error: pendingError } = await supabase
+          .from("pending_orders")
+          .insert({
+            user_id: user.id,
+            total_price: total,
+            payment_method: "card",
+            shipping_address: { district, thana, area },
+            shipping_fee: shippingFee,
+            notes,
+            cart_items: cartItems.map(item => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image
+            })),
+          })
+          .select()
+          .single();
+
+        if (pendingError) throw pendingError;
+
+        const productDetails = cartItems.map(item => `${item.name} x${item.quantity}`).join(", ");
+        
+        const { data: sslData, error: sslError } = await supabase.functions.invoke('sslcommerz-init', {
+          body: {
+            pendingOrderId: pendingOrder.id,
+            amount: total,
+            customerName: profile?.name || user.email?.split('@')[0] || 'Customer',
+            customerEmail: user.email || '',
+            customerPhone: phone,
+            shippingAddress: { district, thana, area },
+            productDetails: productDetails.slice(0, 250),
+          }
+        });
+
+        if (sslError) throw sslError;
+
+        if (sslData?.gatewayUrl) {
+          // DO NOT clear cart - it will be cleared after successful payment
+          // Redirect to SSLCommerz payment gateway
+          window.location.href = sslData.gatewayUrl;
+          return;
+        } else {
+          // Delete the pending order if SSLCommerz fails
+          await supabase.from("pending_orders").delete().eq("id", pendingOrder.id);
+          throw new Error(sslData?.error || 'Failed to initiate online payment');
+        }
+      }
+
+      // For COD, create order directly
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
           total_price: total,
           status: "pending",
-          payment_method: paymentMethod === "online" ? "card" : "cod",
+          payment_method: "cod",
           shipping_address: { district, thana, area },
           shipping_fee: shippingFee,
           notes,
+          payment_status: "pending",
         })
         .select()
         .single();
@@ -132,36 +186,23 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
-      // If online payment, redirect to SSLCommerz
-      if (paymentMethod === "online") {
-        const productDetails = cartItems.map(item => `${item.name} x${item.quantity}`).join(", ");
-        
-        const { data: sslData, error: sslError } = await supabase.functions.invoke('sslcommerz-init', {
-          body: {
-            orderId: order.id,
-            amount: total,
-            customerName: profile?.name || user.email?.split('@')[0] || 'Customer',
-            customerEmail: user.email || '',
-            customerPhone: phone,
-            shippingAddress: { district, thana, area },
-            productDetails: productDetails.slice(0, 250),
-          }
-        });
-
-        if (sslError) throw sslError;
-
-        if (sslData?.gatewayUrl) {
-          // Clear cart before redirecting
-          clearCart();
-          // Redirect to SSLCommerz payment gateway
-          window.location.href = sslData.gatewayUrl;
-          return;
-        } else {
-          throw new Error(sslData?.error || 'Failed to initiate online payment');
-        }
+      // Update stock for each product
+      for (const item of cartItems) {
+        await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", item.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              supabase
+                .from("products")
+                .update({ stock: Math.max(0, data.stock - item.quantity) })
+                .eq("id", item.id);
+            }
+          });
       }
 
-      // For COD, just clear cart and navigate
       clearCart();
       toast.success("Order placed successfully!");
       navigate("/profile");

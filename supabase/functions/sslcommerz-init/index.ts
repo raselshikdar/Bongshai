@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface SSLCommerzRequest {
-  orderId: string;
+  pendingOrderId: string;
   amount: number;
   customerName: string;
   customerEmail: string;
@@ -52,9 +52,9 @@ Deno.serve(async (req) => {
     }
 
     const body: SSLCommerzRequest = await req.json();
-    const { orderId, amount, customerName, customerEmail, customerPhone, shippingAddress, productDetails } = body;
+    const { pendingOrderId, amount, customerName, customerEmail, customerPhone, shippingAddress, productDetails } = body;
 
-    console.log('Initiating SSLCommerz payment for order:', orderId);
+    console.log('Initiating SSLCommerz payment for pending order:', pendingOrderId);
 
     const storeId = Deno.env.get('SSLCOMMERZ_STORE_ID');
     const storePassword = Deno.env.get('SSLCOMMERZ_STORE_PASSWORD');
@@ -78,10 +78,10 @@ Deno.serve(async (req) => {
     formData.append('store_passwd', storePassword);
     formData.append('total_amount', amount.toString());
     formData.append('currency', 'BDT');
-    formData.append('tran_id', orderId);
-    formData.append('success_url', `${origin}/payment/success?order_id=${orderId}`);
-    formData.append('fail_url', `${origin}/payment/fail?order_id=${orderId}`);
-    formData.append('cancel_url', `${origin}/payment/cancel?order_id=${orderId}`);
+    formData.append('tran_id', pendingOrderId); // Use pending order ID as transaction ID
+    formData.append('success_url', `${origin}/payment/success?pending_id=${pendingOrderId}`);
+    formData.append('fail_url', `${origin}/payment/fail?pending_id=${pendingOrderId}`);
+    formData.append('cancel_url', `${origin}/payment/cancel?pending_id=${pendingOrderId}`);
     formData.append('ipn_url', `${Deno.env.get('SUPABASE_URL')}/functions/v1/sslcommerz-ipn`);
     
     // Customer info
@@ -127,7 +127,8 @@ Deno.serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           gatewayUrl: result.GatewayPageURL,
-          sessionKey: result.sessionkey
+          sessionKey: result.sessionkey,
+          pendingOrderId
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

@@ -111,6 +111,8 @@ export type Database = {
           id: string
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: string | null
+          payment_transaction_id: string | null
           shipping_address: Json
           shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status"]
@@ -125,6 +127,8 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_status?: string | null
+          payment_transaction_id?: string | null
           shipping_address: Json
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -139,12 +143,53 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_status?: string | null
+          payment_transaction_id?: string | null
           shipping_address?: Json
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
           tracking_number?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pending_orders: {
+        Row: {
+          cart_items: Json
+          created_at: string
+          expires_at: string
+          id: string
+          notes: string | null
+          payment_method: string
+          shipping_address: Json
+          shipping_fee: number | null
+          total_price: number
+          user_id: string
+        }
+        Insert: {
+          cart_items: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          shipping_address: Json
+          shipping_fee?: number | null
+          total_price: number
+          user_id: string
+        }
+        Update: {
+          cart_items?: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          shipping_address?: Json
+          shipping_fee?: number | null
+          total_price?: number
           user_id?: string
         }
         Relationships: []

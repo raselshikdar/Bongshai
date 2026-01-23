@@ -40,6 +40,8 @@ interface Order {
   total_price: number;
   status: string;
   payment_method: string;
+  payment_status: string | null;
+  payment_transaction_id: string | null;
   shipping_address: {
     district: string;
     thana: string;
@@ -598,6 +600,16 @@ const Admin = () => {
     }
   };
 
+  const getPaymentStatusColor = (status: string | null) => {
+    switch (status) {
+      case "paid": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+      case "pending": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+      case "failed": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+      case "cancelled": return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    }
+  };
+
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -1056,7 +1068,8 @@ const Admin = () => {
                         <TableHead>Customer</TableHead>
                         <TableHead>Total</TableHead>
                         <TableHead>Payment</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Payment Status</TableHead>
+                        <TableHead>Order Status</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -1083,6 +1096,21 @@ const Admin = () => {
                           </TableCell>
                           <TableCell className="capitalize">
                             {order.payment_method === "cod" ? "COD" : order.payment_method}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Badge className={getPaymentStatusColor(order.payment_status)}>
+                                {order.payment_status === "paid" ? "✓ Paid" : 
+                                 order.payment_status === "pending" ? "Pending" : 
+                                 order.payment_status === "failed" ? "Failed" : 
+                                 order.payment_status === "cancelled" ? "Cancelled" : "Pending"}
+                              </Badge>
+                              {order.payment_transaction_id && (
+                                <p className="text-xs text-muted-foreground truncate max-w-[100px]" title={order.payment_transaction_id}>
+                                  ID: {order.payment_transaction_id.slice(0, 8)}...
+                                </p>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusColor(order.status)}>
