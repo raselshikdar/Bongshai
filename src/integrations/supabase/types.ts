@@ -113,6 +113,10 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: string | null
           payment_transaction_id: string | null
+          refund_amount: number | null
+          refund_date: string | null
+          refund_notes: string | null
+          refund_status: string | null
           shipping_address: Json
           shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status"]
@@ -129,6 +133,10 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: string | null
           payment_transaction_id?: string | null
+          refund_amount?: number | null
+          refund_date?: string | null
+          refund_notes?: string | null
+          refund_status?: string | null
           shipping_address: Json
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -145,6 +153,10 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: string | null
           payment_transaction_id?: string | null
+          refund_amount?: number | null
+          refund_date?: string | null
+          refund_notes?: string | null
+          refund_status?: string | null
           shipping_address?: Json
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status"]
