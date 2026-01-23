@@ -1,4 +1,5 @@
 import { Tag, ArrowRight, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +29,7 @@ const fetchDailyDeals = async (): Promise<Product[]> => {
 };
 
 export const DailyDeals = () => {
+  const navigate = useNavigate();
   const { data: products = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["daily-deals"],
     queryFn: fetchDailyDeals,
@@ -87,7 +89,11 @@ export const DailyDeals = () => {
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="ghost" className="text-primary hover:text-primary/80 gap-1">
+          <Button 
+            variant="ghost" 
+            className="text-primary hover:text-primary/80 gap-1"
+            onClick={() => navigate("/products")}
+          >
             View All
             <ArrowRight className="h-4 w-4" />
           </Button>

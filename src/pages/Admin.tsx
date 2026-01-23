@@ -162,22 +162,39 @@ const Admin = () => {
 
     if (productsData) setProducts(productsData);
 
-    // Fetch orders - using left join to ensure all orders are fetched even if profile is missing
+    // Fetch orders - NOT filtered by current user. Admin sees ALL orders.
+    // First fetch orders, then separately fetch profiles for each user_id
     const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
-      .select(`
-        *,
-        profiles(name, phone)
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
-    console.log("Orders fetch result:", { ordersData, ordersError });
+    console.log("Orders fetch result:", { ordersData, ordersError, count: ordersData?.length });
 
-    if (ordersData) {
+    if (ordersError) {
+      console.error("Failed to fetch orders:", ordersError);
+      toast.error("Failed to load orders: " + ordersError.message);
+    }
+
+    if (ordersData && ordersData.length > 0) {
+      // Get unique user IDs
+      const userIds = [...new Set(ordersData.map(o => o.user_id))];
+      
+      // Fetch profiles for those users
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, name, phone")
+        .in("id", userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
       setOrders(ordersData.map((order: any) => ({
         ...order,
         shipping_address: order.shipping_address as Order["shipping_address"],
+        profiles: profilesMap.get(order.user_id) || null,
       })));
+    } else {
+      setOrders([]);
     }
 
     // Fetch users
@@ -291,6 +308,8 @@ const Admin = () => {
       is_flash_sale: productForm.is_flash_sale,
     };
 
+    console.log("Saving product:", productData);
+
     if (editingProduct) {
       const { error } = await supabase
         .from("products")
@@ -298,19 +317,23 @@ const Admin = () => {
         .eq("id", editingProduct.id);
 
       if (error) {
-        toast.error("Failed to update product");
+        console.error("Product update error:", error);
+        toast.error("Failed to update product: " + error.message);
       } else {
         toast.success("Product updated!");
         fetchData();
       }
     } else {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("products")
-        .insert(productData);
+        .insert(productData)
+        .select();
 
       if (error) {
-        toast.error("Failed to add product");
+        console.error("Product insert error:", error);
+        toast.error("Failed to add product: " + error.message);
       } else {
+        console.log("Product created successfully:", data);
         toast.success("Product added!");
         fetchData();
       }
@@ -388,26 +411,43 @@ const Admin = () => {
 
     const file = files[0];
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+    // Convert file to ArrayBuffer for more reliable upload
+    const arrayBuffer = await file.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: file.type });
+
+    console.log("Uploading image:", { fileName, fileType: file.type, size: file.size });
 
     const { data, error } = await supabase.storage
       .from("product-images")
-      .upload(fileName, file);
+      .upload(fileName, blob, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (error) {
-      toast.error("Failed to upload image");
+      console.error("Image upload error:", error);
+      toast.error("Failed to upload image: " + error.message);
       return;
     }
+
+    console.log("Image uploaded successfully:", data);
 
     const { data: { publicUrl } } = supabase.storage
       .from("product-images")
       .getPublicUrl(fileName);
+
+    console.log("Public URL:", publicUrl);
 
     setProductForm((prev) => ({
       ...prev,
       images_url: [...prev.images_url, publicUrl],
     }));
     toast.success("Image uploaded!");
+    
+    // Reset file input
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
