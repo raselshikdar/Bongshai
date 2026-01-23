@@ -87,7 +87,7 @@ export const Footer = () => {
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>Madhupur - 1996, Tangail, Bangladesh</span>
+                <span>Madhupur - 1996, Tangail, BD</span>
               </li>
               <li>
                 <a href="tel:+8809696051484" className="flex items-center gap-2 hover:text-orange-500 transition-colors">

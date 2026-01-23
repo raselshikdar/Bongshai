@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, MapPin, Phone, User, CreditCard, Calendar } from "lucide-react";
+import { Package, MapPin, Phone, User, CreditCard, Calendar, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +29,8 @@ interface OrderDetail {
   tracking_number: string | null;
   notes: string | null;
   shipping_fee: number | null;
+  promo_code_used: string | null;
+  discount_amount: number | null;
   created_at: string;
   user_id: string;
   customer_name?: string;
@@ -240,9 +242,19 @@ export const OrderDetailModal = ({ orderId, isOpen, onClose, isAdmin = false }: 
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>৳{subtotal.toLocaleString()}</span>
                 </div>
+                {/* Show discount as separate line item */}
+                {order.promo_code_used && order.discount_amount && order.discount_amount > 0 && (
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      Discount ({order.promo_code_used})
+                    </span>
+                    <span>-৳{order.discount_amount.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping Fee</span>
-                  <span>৳{(order.shipping_fee || 0).toLocaleString()}</span>
+                  <span>{order.shipping_fee === 0 ? <span className="text-green-600">FREE</span> : `৳${(order.shipping_fee || 0).toLocaleString()}`}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold text-lg">

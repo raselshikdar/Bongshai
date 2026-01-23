@@ -108,11 +108,13 @@ export type Database = {
         Row: {
           admin_notes: string | null
           created_at: string
+          discount_amount: number | null
           id: string
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_status: string | null
           payment_transaction_id: string | null
+          promo_code_used: string | null
           refund_amount: number | null
           refund_date: string | null
           refund_notes: string | null
@@ -128,11 +130,13 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: string | null
           payment_transaction_id?: string | null
+          promo_code_used?: string | null
           refund_amount?: number | null
           refund_date?: string | null
           refund_notes?: string | null
@@ -148,11 +152,13 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_status?: string | null
           payment_transaction_id?: string | null
+          promo_code_used?: string | null
           refund_amount?: number | null
           refund_date?: string | null
           refund_notes?: string | null
@@ -171,10 +177,12 @@ export type Database = {
         Row: {
           cart_items: Json
           created_at: string
+          discount_amount: number | null
           expires_at: string
           id: string
           notes: string | null
           payment_method: string
+          promo_code_used: string | null
           shipping_address: Json
           shipping_fee: number | null
           total_price: number
@@ -183,10 +191,12 @@ export type Database = {
         Insert: {
           cart_items: Json
           created_at?: string
+          discount_amount?: number | null
           expires_at?: string
           id?: string
           notes?: string | null
           payment_method?: string
+          promo_code_used?: string | null
           shipping_address: Json
           shipping_fee?: number | null
           total_price: number
@@ -195,10 +205,12 @@ export type Database = {
         Update: {
           cart_items?: Json
           created_at?: string
+          discount_amount?: number | null
           expires_at?: string
           id?: string
           notes?: string | null
           payment_method?: string
+          promo_code_used?: string | null
           shipping_address?: Json
           shipping_fee?: number | null
           total_price?: number
