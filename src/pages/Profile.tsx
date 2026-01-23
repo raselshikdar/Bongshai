@@ -316,9 +316,13 @@ const Profile = () => {
                               {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </Badge>
                             <Badge className={getPaymentStatusColor(order.payment_status)}>
-                              {order.payment_status === "paid" ? "✓ Paid" : 
-                               order.payment_status === "failed" ? "Failed" : 
-                               "Payment Pending"}
+                              {order.payment_status === "paid" 
+                                ? "✓ Paid" 
+                                : order.payment_status === "failed" 
+                                  ? "Failed" 
+                                  : order.payment_method === "cod" && order.status !== "delivered"
+                                    ? "Pending (Cash on Delivery)"
+                                    : "Payment Pending"}
                             </Badge>
                           </div>
                         </div>

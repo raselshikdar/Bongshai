@@ -388,9 +388,12 @@ const Admin = () => {
       toast.error("Failed to update order status");
     } else {
       toast.success("Order status updated");
-      // Update local state instead of full refetch
+      // Update local state - for COD + delivered, also update payment_status to 'paid' (trigger handles DB)
+      const shouldMarkPaid = status === "delivered" && order?.payment_method === "cod";
       setOrders(prev => prev.map(o => 
-        o.id === orderId ? { ...o, status } : o
+        o.id === orderId 
+          ? { ...o, status, ...(shouldMarkPaid ? { payment_status: "paid" } : {}) } 
+          : o
       ));
       // Update analytics for pending count
       if (status === "pending" || status === "delivered") {
@@ -422,6 +425,22 @@ const Admin = () => {
           // Don't show error to user - status update was successful
         }
       }
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (orderId: string, paymentStatus: "paid" | "pending") => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: paymentStatus })
+      .eq("id", orderId);
+
+    if (error) {
+      toast.error("Failed to update payment status");
+    } else {
+      toast.success(`Payment marked as ${paymentStatus}`);
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, payment_status: paymentStatus } : o
+      ));
     }
   };
 
@@ -1099,12 +1118,35 @@ const Admin = () => {
                           </TableCell>
                           <TableCell>
                             <div className="space-y-1">
-                              <Badge className={getPaymentStatusColor(order.payment_status)}>
-                                {order.payment_status === "paid" ? "✓ Paid" : 
-                                 order.payment_status === "pending" ? "Pending" : 
-                                 order.payment_status === "failed" ? "Failed" : 
-                                 order.payment_status === "cancelled" ? "Cancelled" : "Pending"}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getPaymentStatusColor(order.payment_status)}>
+                                  {order.payment_status === "paid" ? "✓ Paid" : 
+                                   order.payment_status === "pending" ? "Pending" : 
+                                   order.payment_status === "failed" ? "Failed" : 
+                                   order.payment_status === "cancelled" ? "Cancelled" : "Pending"}
+                                </Badge>
+                                {/* Manual payment toggle for admin */}
+                                {order.payment_status !== "paid" && order.status !== "cancelled" && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                    onClick={() => handleUpdatePaymentStatus(order.id, "paid")}
+                                  >
+                                    Mark Paid
+                                  </Button>
+                                )}
+                                {order.payment_status === "paid" && order.payment_method === "cod" && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-xs text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                                    onClick={() => handleUpdatePaymentStatus(order.id, "pending")}
+                                  >
+                                    Mark Unpaid
+                                  </Button>
+                                )}
+                              </div>
                               {order.payment_transaction_id && (
                                 <p className="text-xs text-muted-foreground truncate max-w-[100px]" title={order.payment_transaction_id}>
                                   ID: {order.payment_transaction_id.slice(0, 8)}...

@@ -35,6 +35,17 @@ interface OrderDetail {
   customer_phone?: string;
 }
 
+const getPaymentStatusLabel = (order: OrderDetail) => {
+  if (order.payment_status === "paid") return "✓ Paid";
+  if (order.payment_status === "failed") return "Failed";
+  if (order.payment_status === "cancelled") return "Cancelled";
+  // For COD orders not yet delivered
+  if (order.payment_method === "cod" && order.status !== "delivered") {
+    return "Pending (Cash on Delivery)";
+  }
+  return "Pending";
+};
+
 interface OrderDetailModalProps {
   orderId: string | null;
   isOpen: boolean;
@@ -245,10 +256,7 @@ export const OrderDetailModal = ({ orderId, isOpen, onClose, isAdmin = false }: 
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-muted-foreground">Payment Status</span>
                   <Badge className={getPaymentStatusColor(order.payment_status)}>
-                    {order.payment_status === "paid" ? "✓ Paid" : 
-                     order.payment_status === "failed" ? "Failed" : 
-                     order.payment_status === "cancelled" ? "Cancelled" : 
-                     "Pending"}
+                    {getPaymentStatusLabel(order)}
                   </Badge>
                 </div>
                 {order.payment_transaction_id && (
