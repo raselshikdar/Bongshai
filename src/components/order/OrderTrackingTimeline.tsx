@@ -1,10 +1,11 @@
-import { CheckCircle, Circle, Package, Truck, Home, XCircle } from "lucide-react";
+import { CheckCircle, Circle, Package, Truck, Home, XCircle, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OrderTrackingTimelineProps {
   status: string;
   createdAt: string;
   trackingNumber?: string | null;
+  district?: string;
 }
 
 const ORDER_STEPS = [
@@ -19,10 +20,36 @@ const getStatusIndex = (status: string) => {
   return ORDER_STEPS.findIndex(step => step.key === status);
 };
 
-export const OrderTrackingTimeline = ({ status, createdAt, trackingNumber }: OrderTrackingTimelineProps) => {
+const getEstimatedDelivery = (createdAt: string, district?: string, status?: string): string | null => {
+  if (status === "delivered" || status === "cancelled") {
+    return null;
+  }
+  
+  const isDhaka = district?.toLowerCase() === "dhaka";
+  const orderDate = new Date(createdAt);
+  
+  let minDays = isDhaka ? 2 : 5;
+  let maxDays = isDhaka ? 3 : 7;
+  
+  const minDate = new Date(orderDate);
+  minDate.setDate(orderDate.getDate() + minDays);
+  
+  const maxDate = new Date(orderDate);
+  maxDate.setDate(orderDate.getDate() + maxDays);
+  
+  const formatDate = (date: Date) => date.toLocaleDateString("en-BD", {
+    weekday: "short",
+    month: "short",
+    day: "numeric"
+  });
+  
+  return `${formatDate(minDate)} - ${formatDate(maxDate)}`;
+};
+
+export const OrderTrackingTimeline = ({ status, createdAt, trackingNumber, district }: OrderTrackingTimelineProps) => {
   const currentIndex = getStatusIndex(status);
   const isCancelled = status === "cancelled";
-
+  const estimatedDelivery = getEstimatedDelivery(createdAt, district, status);
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -33,6 +60,17 @@ export const OrderTrackingTimeline = ({ status, createdAt, trackingNumber }: Ord
           </span>
         )}
       </div>
+
+      {/* Estimated Delivery Banner */}
+      {estimatedDelivery && (
+        <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+          <Calendar className="h-5 w-5 text-primary" />
+          <div>
+            <p className="font-medium text-sm text-primary">Estimated Delivery</p>
+            <p className="text-sm text-foreground">{estimatedDelivery}</p>
+          </div>
+        </div>
+      )}
 
       {isCancelled ? (
         <div className="flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
