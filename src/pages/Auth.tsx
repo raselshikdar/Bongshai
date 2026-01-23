@@ -15,9 +15,9 @@ const emailSchema = z.string().trim().email("Please enter a valid email address"
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters").max(100);
 const nameSchema = z.string().trim().min(2, "Name must be at least 2 characters").max(100).optional();
 const phoneSchema = z.string().refine(
-  (val) => val === "" || validateBangladeshPhone(val),
+  (val) => validateBangladeshPhone(val),
   { message: "Please enter a valid Bangladesh phone number (e.g., 01712345678)" }
-).optional();
+);
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const Auth = () => {
       }
     }
 
-    if (activeTab === "signup" && phone) {
+    if (activeTab === "signup") {
       try {
         phoneSchema.parse(phone);
       } catch (e) {
@@ -171,7 +171,9 @@ const Auth = () => {
                   {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (optional)</Label>
+                  <Label htmlFor="phone">
+                    Phone Number <span className="text-destructive">*</span>
+                  </Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -180,10 +182,11 @@ const Auth = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="pl-10"
+                      required
                     />
                   </div>
                   {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
-                  <p className="text-xs text-muted-foreground">Required for Cash on Delivery orders</p>
+                  <p className="text-xs text-muted-foreground">Valid 11-digit Bangladesh number required</p>
                 </div>
               </TabsContent>
               

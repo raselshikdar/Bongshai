@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { OrderDetailModal } from "@/components/order/OrderDetailModal";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { districts, getThanas } from "@/data/bangladeshLocations";
@@ -41,6 +42,7 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -285,7 +287,8 @@ const Profile = () => {
                     {orders.map((order) => (
                       <div
                         key={order.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        onClick={() => setSelectedOrderId(order.id)}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       >
                         <div className="space-y-1">
                           <p className="font-medium">Order #{order.id.slice(0, 8).toUpperCase()}</p>
@@ -318,6 +321,14 @@ const Profile = () => {
       </main>
 
       <Footer />
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        orderId={selectedOrderId}
+        isOpen={!!selectedOrderId}
+        onClose={() => setSelectedOrderId(null)}
+        isAdmin={false}
+      />
     </div>
   );
 };
