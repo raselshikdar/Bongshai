@@ -1,1 +1,10 @@
 project_id = "wayzvzwhgosbccqyqmnd"
+
+[functions.send-order-notification]
+verify_jwt = false
+
+[functions.sslcommerz-init]
+verify_jwt = false
+
+[functions.sslcommerz-ipn]
+verify_jwt = false

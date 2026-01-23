@@ -29,6 +29,9 @@ import TrackOrder from "./pages/TrackOrder";
 import Returns from "./pages/Returns";
 import Shipping from "./pages/Shipping";
 import PaymentMethods from "./pages/PaymentMethods";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFail from "./pages/PaymentFail";
+import PaymentCancel from "./pages/PaymentCancel";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +63,9 @@ const App = () => (
                   <Route path="/returns" element={<Returns />} />
                   <Route path="/shipping" element={<Shipping />} />
                   <Route path="/payment-methods" element={<PaymentMethods />} />
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/payment/fail" element={<PaymentFail />} />
+                  <Route path="/payment/cancel" element={<PaymentCancel />} />
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Profile />

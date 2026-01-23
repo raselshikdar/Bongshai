@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, CreditCard, Truck, CheckCircle, ArrowLeft, ArrowRight, AlertCircle } from "lucide-react";
+import { MapPin, CreditCard, Truck, CheckCircle, ArrowLeft, ArrowRight, AlertCircle, Shield, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ import { districts, getThanas } from "@/data/bangladeshLocations";
 import { toast } from "sonner";
 import { validateBangladeshPhone, isPhoneValidForCOD } from "@/lib/phoneValidation";
 
-type PaymentMethod = "cod" | "bkash" | "nagad";
+type PaymentMethod = "cod" | "online";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -107,7 +107,7 @@ const Checkout = () => {
           user_id: user.id,
           total_price: total,
           status: "pending",
-          payment_method: paymentMethod,
+          payment_method: paymentMethod === "online" ? "card" : "cod",
           shipping_address: { district, thana, area },
           shipping_fee: shippingFee,
           notes,
@@ -132,15 +132,42 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
-      // Stock management can be handled separately if needed
+      // If online payment, redirect to SSLCommerz
+      if (paymentMethod === "online") {
+        const productDetails = cartItems.map(item => `${item.name} x${item.quantity}`).join(", ");
+        
+        const { data: sslData, error: sslError } = await supabase.functions.invoke('sslcommerz-init', {
+          body: {
+            orderId: order.id,
+            amount: total,
+            customerName: profile?.name || user.email?.split('@')[0] || 'Customer',
+            customerEmail: user.email || '',
+            customerPhone: phone,
+            shippingAddress: { district, thana, area },
+            productDetails: productDetails.slice(0, 250),
+          }
+        });
 
-      // Clear cart
+        if (sslError) throw sslError;
+
+        if (sslData?.gatewayUrl) {
+          // Clear cart before redirecting
+          clearCart();
+          // Redirect to SSLCommerz payment gateway
+          window.location.href = sslData.gatewayUrl;
+          return;
+        } else {
+          throw new Error(sslData?.error || 'Failed to initiate online payment');
+        }
+      }
+
+      // For COD, just clear cart and navigate
       clearCart();
-
       toast.success("Order placed successfully!");
       navigate("/profile");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to place order");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to place order";
+      toast.error(message);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -293,7 +320,7 @@ const Checkout = () => {
                         </div>
                         {paymentMethod === "cod" && phoneValidForCOD && (
                           <span className="ml-auto text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
-                            Recommended
+                            Default
                           </span>
                         )}
                       </Label>
@@ -308,31 +335,27 @@ const Checkout = () => {
                       </Alert>
                     )}
                     
-                    <div className={`flex items-center space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === "bkash" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}>
-                      <RadioGroupItem value="bkash" id="bkash" />
-                      <Label htmlFor="bkash" className="flex-1 cursor-pointer">
+                    <div className={`flex items-center space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === "online" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}>
+                      <RadioGroupItem value="online" id="online" />
+                      <Label htmlFor="online" className="flex-1 cursor-pointer">
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-pink-500 rounded text-white text-xs flex items-center justify-center font-bold">b</div>
+                          <Globe className="h-6 w-6 text-primary" />
                           <div>
-                            <p className="font-medium">bKash</p>
-                            <p className="text-sm text-muted-foreground">Mobile payment</p>
+                            <p className="font-medium">Online Payment</p>
+                            <p className="text-sm text-muted-foreground">Cards, bKash, Nagad & more</p>
                           </div>
                         </div>
                       </Label>
                     </div>
                     
-                    <div className={`flex items-center space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === "nagad" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}>
-                      <RadioGroupItem value="nagad" id="nagad" />
-                      <Label htmlFor="nagad" className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-orange-500 rounded text-white text-xs flex items-center justify-center font-bold">N</div>
-                          <div>
-                            <p className="font-medium">Nagad</p>
-                            <p className="text-sm text-muted-foreground">Mobile payment</p>
-                          </div>
-                        </div>
-                      </Label>
-                    </div>
+                    {paymentMethod === "online" && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2">
+                        <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          You'll be redirected to SSLCommerz secure payment gateway to complete your payment.
+                        </p>
+                      </div>
+                    )}
                   </RadioGroup>
 
                   <div className="flex gap-4">
@@ -348,15 +371,21 @@ const Checkout = () => {
                       {isPlacingOrder ? (
                         <span className="flex items-center gap-2">
                           <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Placing Order...
+                          {paymentMethod === "online" ? "Redirecting to Payment..." : "Placing Order..."}
                         </span>
                       ) : (
                         <>
-                          Place Order
+                          {paymentMethod === "online" ? "Pay Now" : "Place Order"}
                           <CheckCircle className="h-4 w-4 ml-2" />
                         </>
                       )}
                     </Button>
+                  </div>
+                  
+                  {/* Secure payment note */}
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-4 border-t">
+                    <Shield className="h-3 w-3" />
+                    <span>Online payments are processed securely via SSLCOMMERZ</span>
                   </div>
                 </CardContent>
               </Card>
