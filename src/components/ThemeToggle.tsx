@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-export const ThemeToggle = ({ variant = "icon" }: { variant?: "icon" | "full" }) => {
+export const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -11,24 +11,16 @@ export const ThemeToggle = ({ variant = "icon" }: { variant?: "icon" | "full" })
     setMounted(true);
   }, []);
 
+  // Prevent layout shift by rendering a placeholder
   if (!mounted) {
-    return null;
-  }
-
-  const isDark = theme === "dark";
-
-  if (variant === "full") {
     return (
-      <Button
-        variant="ghost"
-        className="w-full justify-start gap-2"
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-      >
-        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        {isDark ? "Light Mode" : "Dark Mode"}
+      <Button variant="ghost" size="icon" className="w-9 h-9">
+        <span className="h-5 w-5" />
       </Button>
     );
   }
+
+  const isDark = theme === "dark";
 
   return (
     <Button
@@ -36,8 +28,10 @@ export const ThemeToggle = ({ variant = "icon" }: { variant?: "icon" | "full" })
       size="icon"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label="Toggle theme"
+      className="transition-colors"
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      <Sun className={`h-5 w-5 transition-all ${isDark ? "scale-0 rotate-90" : "scale-100 rotate-0"} absolute`} />
+      <Moon className={`h-5 w-5 transition-all ${isDark ? "scale-100 rotate-0" : "scale-0 -rotate-90"}`} />
     </Button>
   );
 };

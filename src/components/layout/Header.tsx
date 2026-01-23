@@ -69,8 +69,6 @@ export const Header = () => {
             </SheetTrigger>
             <SheetContent side="left" className="w-72 bg-card">
               <div className="flex flex-col gap-4 pt-8">
-                {/* Mobile Theme Toggle */}
-                <ThemeToggle variant="full" />
                 
                 <div className="border-t pt-4">
                   <h2 className="text-lg font-bold mb-2">Categories</h2>
@@ -149,10 +147,8 @@ export const Header = () => {
 
           {/* Actions - Always visible on right */}
           <div className="flex items-center gap-1 shrink-0 ml-auto">
-            {/* Desktop Theme Toggle */}
-            <div className="hidden md:flex">
-              <ThemeToggle />
-            </div>
+            {/* Theme Toggle - Left of Wishlist */}
+            <ThemeToggle />
             
             {/* Wishlist - visible on all sizes */}
             <Button 
