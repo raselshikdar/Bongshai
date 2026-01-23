@@ -4,9 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireVerified?: boolean;
 }
 
-export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ 
+  children, 
+  requireAdmin = false,
+  requireVerified = false 
+}: ProtectedRouteProps) => {
   const { user, isAdmin, isLoading } = useAuth();
 
   if (isLoading) {
@@ -19,6 +24,11 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Check if email is verified when required
+  if (requireVerified && !user.email_confirmed_at) {
+    return <Navigate to="/verify-email" replace />;
   }
 
   if (requireAdmin && !isAdmin) {

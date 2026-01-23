@@ -10,6 +10,7 @@ import { WishlistProvider } from "@/hooks/useWishlist";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import VerifyEmail from "./pages/VerifyEmail";
 import Profile from "./pages/Profile";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -48,6 +49,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/product/:id" element={<ProductDetail />} />
                   <Route path="/category/:slug" element={<Category />} />
                   <Route path="/products" element={<Products />} />
@@ -67,12 +69,12 @@ const App = () => (
                   <Route path="/payment/fail" element={<PaymentFail />} />
                   <Route path="/payment/cancel" element={<PaymentCancel />} />
                   <Route path="/profile" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireVerified>
                       <Profile />
                     </ProtectedRoute>
                   } />
                   <Route path="/checkout" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireVerified>
                       <Checkout />
                     </ProtectedRoute>
                   } />
