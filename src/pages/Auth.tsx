@@ -113,8 +113,8 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
-          toast.success("Account created successfully! Welcome to HaatBazar.");
-          navigate("/");
+          toast.success("Please check your email to verify your account.");
+          navigate("/verify-email");
         }
       }
     } finally {
