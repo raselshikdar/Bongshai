@@ -86,6 +86,12 @@ const categories = [
   "Electronics", "Fashion", "Home & Living", "Beauty", "Sports", "Groceries", "Toys", "Automotive"
 ];
 
+// Extended categories for enhanced product form
+const extendedCategories = [
+  "Electronics", "Fashion", "Home", "Beauty", "Grocery", 
+  "Home & Living", "Sports", "Toys", "Automotive"
+];
+
 const Admin = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isLoading: authLoading } = useAuth();
@@ -710,27 +716,41 @@ const Admin = () => {
                             />
                           </div>
                           
-                          <div className="grid gap-4 sm:grid-cols-3">
+                          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-2">
-                              <Label>Price *</Label>
-                              <Input
-                                type="number"
-                                value={productForm.price}
-                                onChange={(e) => setProductForm((p) => ({ ...p, price: e.target.value }))}
-                                placeholder="0"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Original Price</Label>
+                              <Label>Original Price (MRP)</Label>
                               <Input
                                 type="number"
                                 value={productForm.original_price}
                                 onChange={(e) => setProductForm((p) => ({ ...p, original_price: e.target.value }))}
-                                placeholder="0"
+                                placeholder="৳0"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>Stock *</Label>
+                              <Label>Sale Price *</Label>
+                              <Input
+                                type="number"
+                                value={productForm.price}
+                                onChange={(e) => setProductForm((p) => ({ ...p, price: e.target.value }))}
+                                placeholder="৳0"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Discount %</Label>
+                              <Input
+                                type="text"
+                                readOnly
+                                value={
+                                  productForm.original_price && productForm.price && parseFloat(productForm.original_price) > 0
+                                    ? `${Math.round(((parseFloat(productForm.original_price) - parseFloat(productForm.price)) / parseFloat(productForm.original_price)) * 100)}%`
+                                    : "0%"
+                                }
+                                className="bg-muted"
+                              />
+                              <p className="text-xs text-muted-foreground">Auto-calculated</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Stock Quantity *</Label>
                               <Input
                                 type="number"
                                 value={productForm.stock}

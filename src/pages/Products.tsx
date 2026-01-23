@@ -4,6 +4,7 @@ import { ChevronRight, SlidersHorizontal, RefreshCw } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -154,6 +155,7 @@ const Products = () => {
 
       <Footer />
       <WhatsAppButton />
+      <BackToTop />
     </div>
   );
 };

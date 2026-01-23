@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Eye, EyeOff, ShoppingBag, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, ShoppingBag, Mail, Lock, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,10 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { validateBangladeshPhone } from "@/lib/phoneValidation";
 
 const emailSchema = z.string().trim().email("Please enter a valid email address").max(255);
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters").max(100);
 const nameSchema = z.string().trim().min(2, "Name must be at least 2 characters").max(100).optional();
+const phoneSchema = z.string().refine(
+  (val) => val === "" || validateBangladeshPhone(val),
+  { message: "Please enter a valid Bangladesh phone number (e.g., 01712345678)" }
+).optional();
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -26,7 +31,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const [phone, setPhone] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string }>({});
 
   useEffect(() => {
     if (user && !isLoading) {
@@ -62,6 +68,16 @@ const Auth = () => {
         }
       }
     }
+
+    if (activeTab === "signup" && phone) {
+      try {
+        phoneSchema.parse(phone);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.phone = e.errors[0].message;
+        }
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -88,7 +104,7 @@ const Auth = () => {
           navigate("/");
         }
       } else {
-        const { error } = await signUp(email, password, name);
+        const { error } = await signUp(email, password, name, phone);
         if (error) {
           if (error.message.includes("User already registered")) {
             toast.error("This email is already registered. Please login instead.");
@@ -139,7 +155,7 @@ const Auth = () => {
             </TabsList>
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              <TabsContent value="signup" className="mt-0">
+              <TabsContent value="signup" className="mt-0 space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <div className="relative">
@@ -153,6 +169,21 @@ const Auth = () => {
                     />
                   </div>
                   {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (optional)</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      placeholder="01XXXXXXXXX"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                  <p className="text-xs text-muted-foreground">Required for Cash on Delivery orders</p>
                 </div>
               </TabsContent>
               

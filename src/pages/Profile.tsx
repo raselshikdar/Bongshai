@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Phone, MapPin, Package, ChevronRight, Save, LogOut } from "lucide-react";
+import { User, Phone, MapPin, Package, ChevronRight, Save, LogOut, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { districts, getThanas } from "@/data/bangladeshLocations";
 import { toast } from "sonner";
+import { validateBangladeshPhone } from "@/lib/phoneValidation";
 
 interface Order {
   id: string;
@@ -74,6 +75,12 @@ const Profile = () => {
   }, [user]);
 
   const handleSaveProfile = async () => {
+    // Validate phone if provided
+    if (phone && !validateBangladeshPhone(phone)) {
+      toast.error("Please enter a valid Bangladesh phone number (e.g., 01712345678)");
+      return;
+    }
+
     setIsSaving(true);
     
     const { error } = await updateProfile({
@@ -166,6 +173,18 @@ const Profile = () => {
                         className="pl-10"
                       />
                     </div>
+                    {phone && validateBangladeshPhone(phone) && (
+                      <div className="flex items-center gap-1 text-sm text-green-600">
+                        <CheckCircle className="h-3 w-3" />
+                        Valid phone number
+                      </div>
+                    )}
+                    {phone && !validateBangladeshPhone(phone) && (
+                      <p className="text-sm text-destructive">
+                        Please enter a valid Bangladesh number (e.g., 01712345678)
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">Required for Cash on Delivery orders</p>
                   </div>
                 </CardContent>
               </Card>
