@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
-import { Zap, Clock } from "lucide-react";
+import { Zap, Clock, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
   id: string;
@@ -13,29 +16,30 @@ interface Product {
   review_count: number;
 }
 
+const fetchFlashSaleProducts = async (): Promise<Product[]> => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, price, original_price, images_url, rating, review_count")
+    .eq("is_flash_sale", true)
+    .limit(6);
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const FlashSaleSection = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: products = [], isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["flash-sale-products"],
+    queryFn: fetchFlashSaleProducts,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+  });
+
   const [timeLeft, setTimeLeft] = useState({
     hours: 5,
     minutes: 23,
     seconds: 45,
   });
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("id, name, price, original_price, images_url, rating, review_count")
-        .eq("is_flash_sale", true)
-        .limit(6);
-
-      if (data) setProducts(data);
-      setIsLoading(false);
-    };
-
-    fetchProducts();
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -58,13 +62,24 @@ export const FlashSaleSection = () => {
   if (isLoading) {
     return (
       <section className="py-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 w-48 bg-muted rounded" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="aspect-square bg-muted rounded-lg" />
-            ))}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div>
+              <Skeleton className="h-6 w-32 mb-1" />
+              <Skeleton className="h-4 w-24" />
+            </div>
           </div>
+          <Skeleton className="h-10 w-40 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-square rounded-lg" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -84,6 +99,15 @@ export const FlashSaleSection = () => {
             <h2 className="text-xl md:text-2xl font-bold text-foreground">Flash Sale</h2>
             <p className="text-sm text-muted-foreground font-bengali">সীমিত সময়ের অফার</p>
           </div>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="text-muted-foreground hover:text-primary ml-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
 
         {/* Countdown */}

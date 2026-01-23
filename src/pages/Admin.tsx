@@ -835,7 +835,18 @@ const Admin = () => {
             <TabsContent value="orders">
               <Card>
                 <CardHeader>
-                  <CardTitle>Order Management</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Order Management</CardTitle>
+                    <Button 
+                      variant="outline" 
+                      onClick={fetchData}
+                      disabled={isLoading}
+                      className="gap-2"
+                    >
+                      <Package className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                      Refresh Orders
+                    </Button>
+                  </div>
                   <div className="flex items-center gap-4 mt-4">
                     <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
                       <SelectTrigger className="w-48">
@@ -999,8 +1010,12 @@ const Admin = () => {
                     </TableBody>
                   </Table>
                   {filteredOrders.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No orders found
+                    <div className="text-center py-8 space-y-4">
+                      <p className="text-muted-foreground">No orders found</p>
+                      <Button variant="outline" onClick={fetchData} disabled={isLoading}>
+                        <Package className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh Orders
+                      </Button>
                     </div>
                   )}
                 </CardContent>
