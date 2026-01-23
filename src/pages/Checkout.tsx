@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, CreditCard, Truck, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
+import { MapPin, CreditCard, Truck, CheckCircle, ArrowLeft, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useCart } from "@/hooks/useCart";
@@ -16,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { districts, getThanas } from "@/data/bangladeshLocations";
 import { toast } from "sonner";
+import { validateBangladeshPhone, isPhoneValidForCOD } from "@/lib/phoneValidation";
 
 type PaymentMethod = "cod" | "bkash" | "nagad";
 
@@ -56,11 +58,27 @@ const Checkout = () => {
   const shippingFee = subtotal > 500 ? 0 : 60;
   const total = subtotal + shippingFee;
 
+  // Check if phone is valid for COD
+  const phoneValidForCOD = isPhoneValidForCOD(phone);
+  const showPhoneWarning = paymentMethod === "cod" && !phoneValidForCOD;
+
   const handlePlaceOrder = async () => {
     if (!user) return;
     
     if (!district || !thana || !area || !phone) {
       toast.error("Please fill in all address fields");
+      return;
+    }
+
+    // Validate phone number format
+    if (!validateBangladeshPhone(phone)) {
+      toast.error("Please enter a valid Bangladesh phone number");
+      return;
+    }
+
+    // Block COD if phone is not valid
+    if (paymentMethod === "cod" && !phoneValidForCOD) {
+      toast.error("A valid phone number is required for Cash on Delivery");
       return;
     }
 
@@ -199,6 +217,11 @@ const Checkout = () => {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="01XXXXXXXXX"
                     />
+                    {phone && !validateBangladeshPhone(phone) && (
+                      <p className="text-sm text-destructive">
+                        Please enter a valid Bangladesh number (e.g., 01712345678)
+                      </p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -235,8 +258,8 @@ const Checkout = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
-                    <div className={`flex items-center space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}>
-                      <RadioGroupItem value="cod" id="cod" />
+                    <div className={`flex items-center space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"} ${!phoneValidForCOD ? "opacity-75" : ""}`}>
+                      <RadioGroupItem value="cod" id="cod" disabled={!phoneValidForCOD} />
                       <Label htmlFor="cod" className="flex-1 cursor-pointer">
                         <div className="flex items-center gap-3">
                           <Truck className="h-6 w-6 text-primary" />
@@ -245,13 +268,22 @@ const Checkout = () => {
                             <p className="text-sm text-muted-foreground">Pay when you receive</p>
                           </div>
                         </div>
-                        {paymentMethod === "cod" && (
-                          <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                        {paymentMethod === "cod" && phoneValidForCOD && (
+                          <span className="ml-auto text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
                             Recommended
                           </span>
                         )}
                       </Label>
                     </div>
+
+                    {!phoneValidForCOD && (
+                      <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Cash on Delivery requires a valid Bangladesh phone number. Please update your phone number in Step 1 or choose a different payment method.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     
                     <div className={`flex items-center space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === "bkash" ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"}`}>
                       <RadioGroupItem value="bkash" id="bkash" />

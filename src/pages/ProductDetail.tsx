@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -77,38 +78,51 @@ const ProductDetail = () => {
       setIsLoading(false);
     };
 
-    const fetchReviews = async () => {
-      if (!id) return;
+    fetchProduct();
+  }, [id, navigate]);
 
-      // Use left join (no !inner) to fetch reviews even if profile doesn't exist
-      const { data, error } = await supabase
-        .from("reviews")
-        .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          user_id,
-          profiles(name)
-        `)
-        .eq("product_id", id)
-        .order("created_at", { ascending: false });
+  // Separate effect for fetching reviews - re-runs whenever product_id changes
+  const fetchReviews = async () => {
+    if (!id) return;
 
-      console.log("Reviews fetch result:", { data, error });
+    // Use left join (no !inner) to fetch reviews even if profile doesn't exist
+    const { data, error } = await supabase
+      .from("reviews")
+      .select(`
+        id,
+        rating,
+        comment,
+        created_at,
+        user_id,
+        profiles(name)
+      `)
+      .eq("product_id", id)
+      .order("created_at", { ascending: false });
 
-      if (data) {
-        setReviews(data.map((r: any) => ({
-          id: r.id,
-          rating: r.rating,
-          comment: r.comment,
-          created_at: r.created_at,
-          user_name: r.profiles?.name || "Customer",
-        })));
-      }
-    };
+    console.log("Reviews fetch result:", { data, error });
 
+    if (data) {
+      setReviews(data.map((r: any) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        created_at: r.created_at,
+        user_name: r.profiles?.name || "Customer",
+      })));
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [id]);
+
+  // Check if user can review - separate effect
+  useEffect(() => {
     const checkCanReview = async () => {
-      if (!id || !user) return;
+      if (!id || !user) {
+        setCanReview(false);
+        return;
+      }
 
       // Allow any logged-in user to review (relaxed from purchaser-only)
       const { data: existingReview } = await supabase
@@ -122,10 +136,8 @@ const ProductDetail = () => {
       setCanReview(!existingReview);
     };
 
-    fetchProduct();
-    fetchReviews();
     checkCanReview();
-  }, [id, user, navigate]);
+  }, [id, user]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -171,29 +183,8 @@ const ProductDetail = () => {
       setCanReview(false);
       setComment("");
       setRating(5);
-      // Refresh reviews using left join (consistent with initial fetch)
-      const { data } = await supabase
-        .from("reviews")
-        .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          user_id,
-          profiles(name)
-        `)
-        .eq("product_id", id)
-        .order("created_at", { ascending: false });
-
-      if (data) {
-        setReviews(data.map((r: any) => ({
-          id: r.id,
-          rating: r.rating,
-          comment: r.comment,
-          created_at: r.created_at,
-          user_name: r.profiles?.name || "Customer",
-        })));
-      }
+      // Immediately refresh reviews
+      await fetchReviews();
     }
     
     setIsSubmittingReview(false);
@@ -521,6 +512,7 @@ const ProductDetail = () => {
 
       <Footer />
       <WhatsAppButton />
+      <BackToTop />
     </div>
   );
 };
