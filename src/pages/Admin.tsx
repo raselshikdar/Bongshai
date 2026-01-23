@@ -114,6 +114,8 @@ const Admin = () => {
     original_price: "",
     stock: "",
     category: "",
+    brand: "",
+    delivery_charge: "",
     images_url: [] as string[],
     is_featured: false,
     is_flash_sale: false,
@@ -259,6 +261,8 @@ const Admin = () => {
       original_price: "",
       stock: "",
       category: "",
+      brand: "",
+      delivery_charge: "",
       images_url: [],
       is_featured: false,
       is_flash_sale: false,
@@ -289,6 +293,8 @@ const Admin = () => {
       original_price: product.original_price?.toString() || "",
       stock: product.stock.toString(),
       category: product.category,
+      brand: (product as any).brand || "",
+      delivery_charge: (product as any).delivery_charge?.toString() || "",
       images_url: product.images_url,
       is_featured: product.is_featured,
       is_flash_sale: product.is_flash_sale,
@@ -378,7 +384,20 @@ const Admin = () => {
       toast.error("Failed to update order status");
     } else {
       toast.success("Order status updated");
-      fetchData();
+      // Update local state instead of full refetch
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status } : order
+      ));
+      // Update analytics for pending count
+      if (status === "pending" || status === "delivered") {
+        setAnalytics(prev => ({
+          ...prev,
+          pendingOrders: prev.pendingOrders + (status === "pending" ? 1 : -1),
+          totalSales: status === "delivered" 
+            ? prev.totalSales + (orders.find(o => o.id === orderId)?.total_price || 0)
+            : prev.totalSales
+        }));
+      }
     }
   };
 
@@ -718,6 +737,26 @@ const Admin = () => {
                             />
                           </div>
                           
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Brand Name</Label>
+                              <Input
+                                value={productForm.brand}
+                                onChange={(e) => setProductForm((p) => ({ ...p, brand: e.target.value }))}
+                                placeholder="e.g., Samsung, Nike"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Delivery Charge (৳)</Label>
+                              <Input
+                                type="number"
+                                value={productForm.delivery_charge}
+                                onChange={(e) => setProductForm((p) => ({ ...p, delivery_charge: e.target.value }))}
+                                placeholder="0 for free delivery"
+                              />
+                            </div>
+                          </div>
+
                           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-2">
                               <Label>Original Price (MRP)</Label>
@@ -763,23 +802,35 @@ const Admin = () => {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Product Images</Label>
+                            <Label>Product Images (First image = Thumbnail, up to 5 total)</Label>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              The first image will be used as the main thumbnail. Additional images form the product gallery.
+                            </p>
                             <div className="flex flex-wrap gap-2">
                               {productForm.images_url.map((url, idx) => (
                                 <div key={idx} className="relative w-20 h-20">
-                                  <img src={url} alt="" className="w-full h-full object-cover rounded-lg" />
+                                  <img src={url} alt="" className="w-full h-full object-cover rounded-lg border-2 border-muted" />
+                                  {idx === 0 && (
+                                    <span className="absolute -top-1 -left-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded font-medium">
+                                      Main
+                                    </span>
+                                  )}
                                   <button
+                                    type="button"
                                     onClick={() => removeImage(idx)}
-                                    className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1"
+                                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
                                   >
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
                               ))}
-                              <label className="w-20 h-20 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors">
-                                <Upload className="h-6 w-6 text-muted-foreground" />
-                                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                              </label>
+                              {productForm.images_url.length < 5 && (
+                                <label className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                                  <Upload className="h-5 w-5 text-muted-foreground" />
+                                  <span className="text-[10px] text-muted-foreground mt-1">Add</span>
+                                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                </label>
+                              )}
                             </div>
                           </div>
 
