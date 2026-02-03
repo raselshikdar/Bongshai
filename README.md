@@ -52,7 +52,7 @@ SSLCOMMERZ_STORE_PASSWORD=your_sandbox_password
  * Clone the repository:
 
  ```bash
- git clone [https://github.com/raselshikdar/bongshai.git](https://github.com/raselshikdar/bongshai.git)
+ git clone https://github.com/raselshikdar/bongshai.git
  cd bongshai
  ```
 
