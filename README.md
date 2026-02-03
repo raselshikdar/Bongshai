@@ -51,15 +51,15 @@ SSLCOMMERZ_STORE_PASSWORD=your_sandbox_password
 
  * Clone the repository:
 
-```bash
-   git clone [https://github.com/raselshikdar/bongshai.git](https://github.com/raselshikdar/bongshai.git)
-cd bongshai
-```
+ ```bash
+ git clone [https://github.com/raselshikdar/bongshai.git](https://github.com/raselshikdar/bongshai.git)
+ cd bongshai
+ ```
 
  * Install dependencies:
-```bash
+   ```bash
    npm install
-```
+   ```
 
  * Start the development server:
    ```bash
@@ -78,10 +78,3 @@ cd bongshai
 © 2026 Bongshai. Built with ❤️ for Bangladesh.
 
 ***
-
-### How to add this on your phone:
-1.  Go to your **New Public Repository** on GitHub.
-2.  Click **Add file** > **Create new file**.
-3.  Name the file `README.md`.
-4.  Paste the content from the box above.
-5.  Click **Commit changes**.
