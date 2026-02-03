@@ -42,7 +42,7 @@ const VerifyEmail = () => {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Once confirmed, you'll be automatically logged in and ready to shop on HaatBazar!
+            Once confirmed, you'll be automatically logged in and ready to shop on Bongshai!
           </p>
 
           <div className="pt-4 border-t">

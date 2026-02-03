@@ -19,7 +19,7 @@ const Terms = () => {
             <section className="bg-card p-6 rounded-xl border border-border">
               <h2 className="text-xl font-semibold mb-3 text-foreground">1. Acceptance of Terms</h2>
               <p className="text-muted-foreground">
-                By accessing and using HaatBazar, you accept and agree to be bound by the terms and 
+                By accessing and using Bongshai, you accept and agree to be bound by the terms and 
                 provisions of this agreement. If you do not agree to these terms, please do not use 
                 our services.
               </p>
@@ -28,7 +28,7 @@ const Terms = () => {
             <section className="bg-card p-6 rounded-xl border border-border">
               <h2 className="text-xl font-semibold mb-3 text-foreground">2. Use of Service</h2>
               <p className="text-muted-foreground mb-3">
-                You agree to use HaatBazar only for lawful purposes. You are prohibited from:
+                You agree to use Bongshai only for lawful purposes. You are prohibited from:
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
                 <li>Using the service for any illegal activities</li>
@@ -84,7 +84,7 @@ const Terms = () => {
             <section className="bg-card p-6 rounded-xl border border-border">
               <h2 className="text-xl font-semibold mb-3 text-foreground">8. Limitation of Liability</h2>
               <p className="text-muted-foreground">
-                HaatBazar shall not be liable for any indirect, incidental, or consequential damages 
+                Bongshai shall not be liable for any indirect, incidental, or consequential damages 
                 arising from your use of our services. Our total liability shall not exceed the amount 
                 paid for the specific product or service in question.
               </p>

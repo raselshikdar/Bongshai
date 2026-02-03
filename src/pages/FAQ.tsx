@@ -91,7 +91,7 @@ const FAQ = () => {
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
           <p className="text-muted-foreground mb-8">
-            Find answers to common questions about shopping at HaatBazar.
+            Find answers to common questions about shopping at Bongshai.
           </p>
           
           {faqs.map((section, idx) => (

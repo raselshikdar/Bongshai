@@ -1,4 +1,4 @@
-# HaatBazar E-commerce SEO Optimization
+# Bongshai E-commerce SEO Optimization
 User-agent: *
 Allow: /
 Disallow: /admin
@@ -14,4 +14,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://haatbazar.lovable.app/sitemap.xml
+Sitemap: https://bongshai.lovable.app/sitemap.xml
