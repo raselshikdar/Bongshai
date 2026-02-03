@@ -27,42 +27,42 @@ const getStatusMessage = (status: string, trackingNumber?: string): { subject: s
   switch (status) {
     case "pending":
       return {
-        subject: "Order Confirmed - HaatBazar",
+        subject: "Order Confirmed - Bongshai",
         heading: "🎉 Order Confirmed!",
         message: "Thank you for your order! We've received your order and will start processing it soon.",
         color: "#f59e0b"
       };
     case "processing":
       return {
-        subject: "Your Order is Being Prepared - HaatBazar",
+        subject: "Your Order is Being Prepared - Bongshai",
         heading: "📦 Order Processing",
         message: "Great news! We're now preparing your order for shipment. You'll receive another update once it's on the way.",
         color: "#3b82f6"
       };
     case "shipped":
       return {
-        subject: "Your Order is On the Way! - HaatBazar",
+        subject: "Your Order is On the Way! - Bongshai",
         heading: "🚚 Order Shipped!",
         message: `Your order has been shipped and is on its way to you!${trackingNumber ? ` Your tracking number is: ${trackingNumber}` : ""}`,
         color: "#8b5cf6"
       };
     case "delivered":
       return {
-        subject: "Order Delivered - HaatBazar",
+        subject: "Order Delivered - Bongshai",
         heading: "✅ Order Delivered!",
-        message: "Your order has been delivered! We hope you love your purchase. Thank you for shopping with HaatBazar!",
+        message: "Your order has been delivered! We hope you love your purchase. Thank you for shopping with Bongshai!",
         color: "#10b981"
       };
     case "cancelled":
       return {
-        subject: "Order Cancelled - HaatBazar",
+        subject: "Order Cancelled - Bongshai",
         heading: "❌ Order Cancelled",
         message: "Your order has been cancelled. If you have any questions, please contact our support team.",
         color: "#ef4444"
       };
     default:
       return {
-        subject: "Order Update - HaatBazar",
+        subject: "Order Update - Bongshai",
         heading: "📋 Order Update",
         message: "Your order status has been updated.",
         color: "#6b7280"
@@ -179,7 +179,7 @@ const handler = async (req: Request): Promise<Response> => {
           ` : ""}
           
           <div style="text-align: center; margin-top: 30px;">
-            <a href="https://haatbazar.lovable.app/profile" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Order</a>
+            <a href="https://bongshai.lovable.app/profile" style="display: inline-block; background: ${statusInfo.color}; color: white; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Order</a>
           </div>
           
           <p style="font-size: 14px; color: #64748b; margin-top: 30px; text-align: center;">
@@ -188,14 +188,14 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
         
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-          <p style="margin: 0;">© ${new Date().getFullYear()} HaatBazar. All rights reserved.</p>
+          <p style="margin: 0;">© ${new Date().getFullYear()} Bongshai. All rights reserved.</p>
         </div>
       </body>
       </html>
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "HaatBazar <onboarding@resend.dev>",
+      from: "Bongshai <onboarding@resend.dev>",
       to: [userEmail],
       subject: statusInfo.subject,
       html: emailHtml,

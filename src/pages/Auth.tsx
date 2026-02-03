@@ -138,7 +138,7 @@ const Auth = () => {
             <ShoppingBag className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl font-bold">
-            Welcome to <span className="text-primary">HaatBazar</span>
+            Welcome to <span className="text-primary">Bongshai</span>
           </CardTitle>
           <CardDescription>
             {activeTab === "login" 

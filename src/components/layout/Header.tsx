@@ -112,11 +112,9 @@ export const Header = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
-              <span className="text-xl font-bold text-primary-foreground">H</span>
-            </div>
+            <img src="/logo.png" alt="Bongshai" className="h-10 w-10 rounded-lg object-contain" />
             <span className="hidden text-xl font-bold text-foreground sm:inline">
-              Haat<span className="text-primary">Bazar</span>
+              Bong<span className="text-primary">shai</span>
             </span>
           </Link>
 

@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the origin from the request for callback URLs
-    const origin = req.headers.get('origin') || 'https://haatbazar.lovable.app';
+    const origin = req.headers.get('origin') || 'https://bongshai.lovable.app';
 
     // SSLCommerz Sandbox API endpoint
     const sslcommerzUrl = 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php';

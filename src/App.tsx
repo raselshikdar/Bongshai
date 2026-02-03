@@ -38,7 +38,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="haatbazar-theme">
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="bongshai-theme">
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>

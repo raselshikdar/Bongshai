@@ -42,18 +42,16 @@ export const Footer = () => {
           {/* About */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
-                <span className="text-xl font-bold text-white">H</span>
-              </div>
+              <img src="/logo.png" alt="Bongshai" className="h-10 w-10 rounded-lg object-contain" />
               <span className="text-xl font-bold">
-                Haat<span className="text-orange-500">Bazar</span>
+                Bong<span className="text-orange-500">shai</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-4">
               Bangladesh's most trusted online shopping destination. Quality products at unbeatable prices.
             </p>
             <p className="text-sm text-gray-400 font-bengali">
-              বাংলাদেশের সবচেয়ে বিশ্বস্ত অনলাইন শপিং গন্তব্য
+              বংশাই - বাংলাদেশের সবচেয়ে বিশ্বস্ত অনলাইন শপিং গন্তব্য
             </p>
           </div>
 
@@ -77,7 +75,7 @@ export const Footer = () => {
               <li><Link to="/returns" className="hover:text-orange-500 transition-colors">Returns & Refunds</Link></li>
               <li><Link to="/shipping" className="hover:text-orange-500 transition-colors">Shipping Info</Link></li>
               <li><Link to="/payment-methods" className="hover:text-orange-500 transition-colors">Payment Methods</Link></li>
-              <li><a href="mailto:info@rasel.work.gd" className="hover:text-orange-500 transition-colors">Sell on HaatBazar</a></li>
+              <li><a href="mailto:info@rasel.work.gd" className="hover:text-orange-500 transition-colors">Sell on Bongshai</a></li>
             </ul>
           </div>
 
@@ -145,7 +143,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>© 2024 HaatBazar. All rights reserved. Made with ❤️ in Bangladesh</p>
+          <p>© 2024 Bongshai. All rights reserved. Made with ❤️ in Bangladesh</p>
         </div>
       </div>
     </footer>
