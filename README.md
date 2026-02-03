@@ -75,6 +75,8 @@ SSLCOMMERZ_STORE_PASSWORD=your_sandbox_password
  * Row Level Security (RLS): All Supabase tables are protected by strict RLS policies ensuring users can only access their own data.
  * Environment Protection: Sensitive keys (Service Role Keys) are stored in secure backend environments and never exposed to the frontend.
 
+***
+
 © 2026 Bongshai. Built with ❤️ for Bangladesh.
 
 ***
